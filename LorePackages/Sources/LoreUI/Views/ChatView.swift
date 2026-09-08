@@ -97,7 +97,14 @@ struct ChatView: View {
                 .textFieldStyle(.plain)
                 .lineLimit(1...6)
                 .padding(12)
-                .onSubmit(send)
+                .onKeyPress { keyPress in
+                    // Enter sends; Shift+Enter (and every other key) passes through.
+                    guard keyPress.key == .return, !keyPress.modifiers.contains(.shift) else {
+                        return .ignored
+                    }
+                    send()
+                    return .handled
+                }
 
             Button(action: send) {
                 Image(systemName: "arrow.up.circle.fill")

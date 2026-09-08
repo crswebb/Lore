@@ -323,7 +323,7 @@ public struct MetadataExtractor: Sendable {
     public init(llm: any LLMProvider) { self.llm = llm }
 
     /// Fields we try to populate. Kept small and practical.
-    public static let fields = ["vendor", "purchaseDate", "warrantyUntil", "model", "serialNumber"]
+    public static let fields = ["vendor", "purchaseDate", "warrantyUntil", "model", "serialNumber", "products"]
 
     public func extract(text: String, model: String) async throws -> [String: String] {
         let snippet = String(text.prefix(4000))
@@ -333,8 +333,9 @@ public struct MetadataExtractor: Sendable {
         - vendor (store or seller name)
         - purchaseDate (ISO 8601 yyyy-mm-dd)
         - warrantyUntil (ISO 8601 yyyy-mm-dd; if the document gives a purchase date and a warranty length, compute the end date)
-        - model (product model name/number)
+        - model (model name/number of the MAIN product, if there is a single clear one)
         - serialNumber
+        - products (a JSON array of EVERY distinct product or line item the document lists — for an invoice or receipt with several items, include them ALL, by their product names)
         Return a JSON object containing ONLY the fields you actually found. If none, return {}.
 
         Document:
@@ -369,6 +370,13 @@ public struct MetadataExtractor: Sendable {
             switch value {
             case let s as String: string = s
             case let n as NSNumber: string = n.stringValue
+            case let array as [Any]:
+                // e.g. `products`: join line items into one readable string.
+                string = array.compactMap { element -> String? in
+                    if let s = element as? String { return s }
+                    if let n = element as? NSNumber { return n.stringValue }
+                    return nil
+                }.joined(separator: "; ")
             default: continue
             }
             let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)

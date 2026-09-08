@@ -309,6 +309,36 @@ public final class AppModel {
         }
     }
 
+    /// Detect a "fetch/download the manual for X" request and extract X.
+    /// Returns nil for content questions *about* a manual (what/how/where…).
+    static func manualFetchQuery(from text: String) -> String? {
+        let lower = text.lowercased()
+        let fetchVerbs = ["hämta", "ladda ner", "ladda", "fetch", "download", "skaffa", "find me", "get me", "leta upp", "sök upp", "sök efter"]
+        let manualNouns = ["manual", "bruksanvisning", "handbok", "user guide", "instruktionsbok", "instruction"]
+        // Content-question words → this is a question about the manual, not a fetch.
+        let questionWords = ["vad ", "what ", "hur ", "how ", "var ", "where ", "när ", "when ", "varför ", "why ", "vilken sida", "which page"]
+
+        guard fetchVerbs.contains(where: { lower.contains($0) }),
+              manualNouns.contains(where: { lower.contains($0) }),
+              !questionWords.contains(where: { lower.contains($0) })
+        else { return nil }
+
+        var product = text
+        if let range = lower.range(of: "för ") {
+            product = String(text[range.upperBound...])
+        } else if let range = lower.range(of: "for ") {
+            product = String(text[range.upperBound...])
+        } else {
+            var cleaned = lower
+            for word in fetchVerbs + manualNouns + ["den", "the", "du", "kan", "please", "min", "mitt", "my", "en", "ett", "a ", "an "] {
+                cleaned = cleaned.replacingOccurrences(of: word, with: " ")
+            }
+            product = cleaned
+        }
+        product = product.trimmingCharacters(in: CharacterSet(charactersIn: " ?.!,:;\"'"))
+        return product.isEmpty ? nil : product
+    }
+
     private static func manualsDirectory() throws -> URL {
         let base = try FileManager.default.url(
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
@@ -394,6 +424,23 @@ public final class AppModel {
         // Rename a fresh chat after its first question.
         if messages.filter({ $0.role == .user }).count == 1 {
             await renameChatFromFirstQuestion(chatID: chatID, question: trimmed)
+        }
+
+        // Chat-triggered manual fetch: if the user asks to fetch/download a
+        // manual for something, run the web search instead of a RAG answer.
+        if let product = Self.manualFetchQuery(from: trimmed) {
+            let ack = Message(
+                chatID: chatID, role: .assistant,
+                text: "Searching the web for a user manual matching “\(product)”. I'll show the results in a panel — pick any to add to this project."
+            )
+            messages.append(ack)
+            try? await chatsRepo.add(ack)
+            manualQuery = "\(product) user manual"
+            manualCandidates = []
+            addedManualURLs = []
+            showManualResults = true
+            await runManualSearch()
+            return
         }
 
         let history = Array(messages.dropLast())

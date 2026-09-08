@@ -140,7 +140,7 @@ struct MetadataSheet: View {
 
     struct Pair: Identifiable { let id = UUID(); var key: String; var value: String }
 
-    private let suggestedKeys = ["vendor", "purchaseDate", "warrantyUntil", "model", "serialNumber"]
+    private let suggestedKeys = ["vendor", "purchaseDate", "warrantyUntil", "model", "serialNumber", "products"]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
