@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 import LoreCore
 import LoreDesignSystem
@@ -7,11 +8,15 @@ import LoreDesignSystem
 /// Kept lightweight since most time is spent chatting, not administrating docs.
 struct DocumentsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.openURL) private var openURL
 
     @State private var showFileImporter = false
     @State private var showLinkSheet = false
     @State private var metadataDocument: Document?
+    @State private var pdfTarget: PDFTarget?
     @State private var dropTargeted = false
+
+    struct PDFTarget: Identifiable { let id = UUID(); let url: URL }
 
     private var allowedTypes: [UTType] {
         [.pdf, .plainText, .text, UTType(filenameExtension: "md") ?? .plainText]
@@ -45,6 +50,27 @@ struct DocumentsView: View {
         }
         .sheet(isPresented: $showLinkSheet) { AddLinkSheet().environment(model) }
         .sheet(item: $metadataDocument) { doc in MetadataSheet(document: doc).environment(model) }
+        .sheet(item: $pdfTarget) { target in PDFViewerSheet(url: target.url, page: nil) }
+    }
+
+    /// Open a document's original source.
+    private func open(_ document: Document) {
+        switch document.kind {
+        case .webLink:
+            if let url = document.sourceURL { openURL(url) }
+        case .pdf:
+            if let url = FileAccess.resolve(bookmark: document.fileBookmark, fallback: document.sourceURL)?.url {
+                pdfTarget = PDFTarget(url: url)
+            } else {
+                model.errorMessage = "Couldn't locate the file for “\(document.title)”."
+            }
+        case .text, .markdown:
+            if let url = FileAccess.resolve(bookmark: document.fileBookmark, fallback: document.sourceURL)?.url {
+                NSWorkspace.shared.open(url)
+            } else {
+                model.errorMessage = "Couldn't locate the file for “\(document.title)”."
+            }
+        }
     }
 
     private var header: some View {
@@ -70,11 +96,19 @@ struct DocumentsView: View {
                 emptyState
             } else {
                 ForEach(model.documents) { document in
-                    DocumentRow(
-                        document: document,
-                        isIndexing: model.indexingDocumentIDs.contains(document.id)
-                    )
+                    Button {
+                        open(document)
+                    } label: {
+                        DocumentRow(
+                            document: document,
+                            isIndexing: model.indexingDocumentIDs.contains(document.id)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .pointerStyle(.link)
+                    .help("Open \(document.title)")
                     .contextMenu {
+                        Button("Open") { open(document) }
                         Button("Edit facts…") { metadataDocument = document }
                         Button("Re-index") { Task { await model.reindex(document) } }
                         Divider()
@@ -117,7 +151,9 @@ struct DocumentRow: View {
                 .frame(width: 26)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(document.title).lineLimit(1)
+                Text(document.title)
+                    .foregroundStyle(LoreTheme.accent)
+                    .lineLimit(1)
                 HStack(spacing: 6) {
                     if !document.metadata.isEmpty {
                         Image(systemName: "tag.fill").font(.caption2).foregroundStyle(.secondary)
