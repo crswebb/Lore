@@ -5,8 +5,7 @@ import LoreDesignSystem
 struct SidebarView: View {
     @Environment(AppModel.self) private var model
     @State private var showNewProject = false
-    @State private var renamingProject: Project?
-    @State private var renameText = ""
+    @State private var editingProject: Project?
 
     var body: some View {
         @Bindable var model = model
@@ -19,10 +18,7 @@ struct SidebarView: View {
                     ProjectRow(project: project)
                         .tag(project.id)
                         .contextMenu {
-                            Button("Rename…") {
-                                renameText = project.name
-                                renamingProject = project
-                            }
+                            Button("Edit…") { editingProject = project }
                             Button("Delete", role: .destructive) {
                                 Task { await model.deleteProject(project.id) }
                             }
@@ -31,16 +27,8 @@ struct SidebarView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .alert("Rename project", isPresented: Binding(
-            get: { renamingProject != nil },
-            set: { if !$0 { renamingProject = nil } }
-        )) {
-            TextField("Project name", text: $renameText)
-            Button("Rename") {
-                if let project = renamingProject { Task { await model.renameProject(project.id, to: renameText) } }
-                renamingProject = nil
-            }
-            Button("Cancel", role: .cancel) { renamingProject = nil }
+        .sheet(item: $editingProject) { project in
+            ProjectEditorSheet(existing: project).environment(model)
         }
         .safeAreaInset(edge: .bottom) {
             statusBar

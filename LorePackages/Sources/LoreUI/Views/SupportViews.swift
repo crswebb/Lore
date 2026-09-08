@@ -24,11 +24,20 @@ func statusLabel(for status: DocumentStatus) -> String {
     }
 }
 
-// MARK: - New project
+// MARK: - Project editor (create + edit)
 
+/// Convenience for the "New Project" call sites.
 struct NewProjectSheet: View {
+    var body: some View { ProjectEditorSheet() }
+}
+
+/// Create a new project (when `existing` is nil) or edit name/icon/color of an
+/// existing one.
+struct ProjectEditorSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+
+    var existing: Project?
 
     @State private var name = ""
     @State private var icon = "house.fill"
@@ -37,9 +46,11 @@ struct NewProjectSheet: View {
     private let icons = ["house.fill", "car.fill", "briefcase.fill", "book.fill",
                          "wrench.and.screwdriver.fill", "heart.fill", "airplane", "leaf.fill"]
 
+    private var isEditing: Bool { existing != nil }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("New Project").font(.title2.bold())
+            Text(isEditing ? "Edit Project" : "New Project").font(.title2.bold())
 
             TextField("Project name", text: $name)
                 .textFieldStyle(.roundedBorder)
@@ -76,15 +87,31 @@ struct NewProjectSheet: View {
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
-                Button("Create") {
-                    Task { await model.createProject(name: name, icon: icon, tint: tint); dismiss() }
-                }
-                .buttonStyle(.glassProminent)
-                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                Button(isEditing ? "Save" : "Create") { save() }
+                    .buttonStyle(.glassProminent)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(24)
         .frame(width: 420, height: 380)
+        .onAppear {
+            if let existing {
+                name = existing.name
+                icon = existing.icon
+                tint = existing.colorTint
+            }
+        }
+    }
+
+    private func save() {
+        if var project = existing {
+            project.name = name
+            project.icon = icon
+            project.colorTint = tint
+            Task { await model.updateProject(project); dismiss() }
+        } else {
+            Task { await model.createProject(name: name, icon: icon, tint: tint); dismiss() }
+        }
     }
 }
 
