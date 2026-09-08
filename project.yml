@@ -1,0 +1,40 @@
+name: Lore
+options:
+  bundleIdPrefix: se.crswebb
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Local development build: ad-hoc signed, unsandboxed for smooth first-run
+    # testing. App Sandbox + entitlements are a hardening step (see ARCHITECTURE
+    # §8 / roadmap M7) before Developer-ID distribution.
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    ENABLE_HARDENED_RUNTIME: NO
+
+packages:
+  LorePackages:
+    path: LorePackages
+
+targets:
+  Lore:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+    dependencies:
+      - package: LorePackages
+        product: LoreUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: se.crswebb.Lore
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Lore
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Lore — Explore your lore."

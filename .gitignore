@@ -14,3 +14,9 @@ DerivedData/
 
 # Lore local data (never commit user knowledge bases)
 *.lorebundle
+
+# Xcodegen output (project.yml is source of truth)
+Lore.xcodeproj/
+
+# Local build output
+build/
