@@ -130,6 +130,23 @@ public final class LoreDatabase: Sendable {
             try db.create(index: "message_chatID", on: "message", columns: ["chatID"])
         }
 
+        migrator.registerMigration("v2-chat-memory") { db in
+            // Past chat messages, embedded, so earlier conversations become
+            // retrievable project knowledge. Vector stored inline (small volume).
+            try db.create(table: "memory") { t in
+                t.primaryKey("id", .blob).notNull()
+                t.column("projectID", .blob).notNull()
+                    .references("project", onDelete: .cascade)
+                t.column("chatID", .blob)
+                    .references("chat", onDelete: .cascade)
+                t.column("role", .text).notNull()
+                t.column("text", .text).notNull()
+                t.column("vector", .blob).notNull()
+                t.column("createdAt", .datetime).notNull()
+            }
+            try db.create(index: "memory_projectID", on: "memory", columns: ["projectID"])
+        }
+
         return migrator
     }
 }

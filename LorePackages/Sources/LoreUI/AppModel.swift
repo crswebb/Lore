@@ -19,6 +19,7 @@ public final class AppModel {
     @ObservationIgnored var documentsRepo: DocumentRepository
     @ObservationIgnored var chatsRepo: ChatRepository
     @ObservationIgnored var chunksRepo: ChunkRepository
+    @ObservationIgnored var memoryRepo: MemoryRepository
     @ObservationIgnored var setupService: OllamaSetupService
     @ObservationIgnored var embedder: OllamaEmbeddingProvider
     @ObservationIgnored var llm: OllamaProvider
@@ -72,6 +73,7 @@ public final class AppModel {
         self.documentsRepo = DocumentRepository(db)
         self.chatsRepo = ChatRepository(db)
         self.chunksRepo = ChunkRepository(db)
+        self.memoryRepo = MemoryRepository(db)
 
         let base = settings.ollamaBaseURL
         let llm = OllamaProvider(baseURL: base)
@@ -84,7 +86,7 @@ public final class AppModel {
         self.embedder = embedder
         self.setupService = OllamaSetupService(provider: llm)
         self.indexing = IndexingService(documents: documentsRepo, chunks: chunksRepo, embedder: embedder)
-        let retrieval = RetrievalService(chunks: chunksRepo, documents: documentsRepo, embedder: embedder)
+        let retrieval = RetrievalService(chunks: chunksRepo, documents: documentsRepo, memory: memoryRepo, embedder: embedder)
         self.chatService = ChatService(retrieval: retrieval, llm: llm)
         self.metadataExtractor = MetadataExtractor(llm: llm)
     }
@@ -581,9 +583,29 @@ public final class AppModel {
             assistant.citations = cited
             messages[assistantIndex].citations = cited
             try? await chatsRepo.add(assistant)
+
+            // Fold this exchange into the project's chat memory so future
+            // questions can recall it. Best-effort, off the critical path.
+            let answerText = assistant.text
+            Task {
+                await indexMemory(chatID: chatID, role: .user, text: trimmed)
+                await indexMemory(chatID: chatID, role: .assistant, text: answerText)
+            }
         } catch {
             messages[assistantIndex].text = "⚠️ \(error.localizedDescription)"
             report(error)
+        }
+    }
+
+    /// Embed a message and store it as retrievable chat memory. Best-effort.
+    private func indexMemory(chatID: UUID, role: MessageRole, text: String) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 8, let pid = selectedProjectID else { return }
+        do {
+            let vector = try await embedder.embed(String(trimmed.prefix(2000)))
+            try await memoryRepo.insert(projectID: pid, chatID: chatID, role: role.rawValue, text: trimmed, embedding: vector)
+        } catch {
+            // Memory is a bonus; never surface its failures.
         }
     }
 

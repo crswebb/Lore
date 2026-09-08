@@ -78,6 +78,7 @@ public struct PromptBuilder: Sendable {
         library: [LibraryItem],
         passages: [RetrievedPassage],
         metadata: [String: String],
+        memories: [String] = [],
         history: [ChatTurn],
         question: String
     ) -> [ChatTurn] {
@@ -112,6 +113,15 @@ public struct PromptBuilder: Sendable {
         // "how old is this", etc.
         let today = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
         userContent += "Today's date: \(today)\n\n"
+
+        if !memories.isEmpty {
+            userContent += "NOTES FROM EARLIER CONVERSATIONS IN THIS PROJECT "
+            userContent += "(background; lower priority than documents and may be imperfect):\n"
+            for note in memories {
+                userContent += "- \(note)\n"
+            }
+            userContent += "\n"
+        }
 
         if !metadata.isEmpty {
             userContent += "KNOWN FACTS:\n"

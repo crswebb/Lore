@@ -194,12 +194,15 @@ public struct RetrievalResult: Sendable {
     /// Every document in the project (title + facts) so aggregate questions like
     /// "what do I have?" see the full picture, not just the top passages.
     public let library: [LibraryItem]
+    /// Relevant snippets from earlier conversations in this project.
+    public let memoryNotes: [String]
 }
 
 /// Hybrid retrieval: dense vector + keyword FTS, fused with RRF.
 public struct RetrievalService: Sendable {
     let chunks: ChunkRepository
     let documents: DocumentRepository
+    let memory: MemoryRepository?
     let embedder: any EmbeddingProvider
     let topK: Int
     let candidatePool: Int
@@ -207,11 +210,13 @@ public struct RetrievalService: Sendable {
     public init(
         chunks: ChunkRepository,
         documents: DocumentRepository,
+        memory: MemoryRepository? = nil,
         embedder: any EmbeddingProvider,
         topK: Int = 6
     ) {
         self.chunks = chunks
         self.documents = documents
+        self.memory = memory
         self.embedder = embedder
         self.topK = topK
         self.candidatePool = topK * 4
@@ -223,6 +228,20 @@ public struct RetrievalService: Sendable {
         let library = allDocuments.map { LibraryItem(title: $0.title, facts: $0.metadata) }
 
         let queryVector = try await embedder.embed(question)
+
+        // Relevant snippets from earlier conversations (best-effort).
+        var memoryNotes: [String] = []
+        if let memory, let items = try? await memory.all(projectID: projectID), !items.isEmpty {
+            memoryNotes = items
+                .map { (item: $0, score: VectorSearch.cosineSimilarity(queryVector, $0.vector)) }
+                .filter { $0.score > 0.4 }
+                .sorted { $0.score > $1.score }
+                .prefix(3)
+                .map { entry in
+                    let who = entry.item.role == "user" ? "You said" : "Earlier answer"
+                    return "\(who): \(entry.item.text.prefix(300))"
+                }
+        }
 
         async let embeddingsTask = chunks.embeddings(projectID: projectID)
         async let keywordTask = chunks.keywordSearch(projectID: projectID, query: question, limit: candidatePool)
@@ -237,7 +256,7 @@ public struct RetrievalService: Sendable {
         let fused = ReciprocalRankFusion().fuse([vectorIDs, keywordIDs])
         let selected = Array(fused.prefix(topK))
         guard !selected.isEmpty else {
-            return RetrievalResult(passages: [], citations: [], metadata: [:], library: library)
+            return RetrievalResult(passages: [], citations: [], metadata: [:], library: library, memoryNotes: memoryNotes)
         }
 
         // Fetch chunk rows and restore fused order.
@@ -269,7 +288,7 @@ public struct RetrievalService: Sendable {
             }
         }
 
-        return RetrievalResult(passages: passages, citations: citations, metadata: metadata, library: library)
+        return RetrievalResult(passages: passages, citations: citations, metadata: metadata, library: library, memoryNotes: memoryNotes)
     }
 }
 
@@ -304,6 +323,7 @@ public struct ChatService: Sendable {
             library: result.library,
             passages: result.passages,
             metadata: result.metadata,
+            memories: result.memoryNotes,
             history: history,
             question: question
         )

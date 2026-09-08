@@ -141,4 +141,19 @@ if candidates.isEmpty {
     log("✅ Manual search returned \(candidates.count) candidates.")
 }
 
+// 10. Chat memory: store a stated fact, then retrieve it for a later question.
+log("\n• Chat memory…")
+let memoryRepo = MemoryRepository(db)
+let fact = "Min favoritfärg är grön och jag älskar kaffe."
+try await memoryRepo.insert(
+    projectID: project.id, chatID: nil, role: "user", text: fact,
+    embedding: try await embedder.embed(fact)
+)
+let memRetrieval = RetrievalService(chunks: chunks, documents: documents, memory: memoryRepo, embedder: embedder)
+let memResult = try await memRetrieval.retrieve(projectID: project.id, question: "Vad är min favoritfärg?")
+for note in memResult.memoryNotes { log("  \(note)") }
+log(memResult.memoryNotes.contains { $0.lowercased().contains("grön") }
+    ? "✅ Recalled the earlier statement from chat memory."
+    : "⚠️ Did not recall the earlier statement.")
+
 exit(grounded ? 0 : 2)

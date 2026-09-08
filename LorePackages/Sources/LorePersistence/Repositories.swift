@@ -91,6 +91,50 @@ public struct ChatRepository: Sendable {
     }
 }
 
+// MARK: - Chat memory
+
+struct MemoryRecord: Codable, FetchableRecord, PersistableRecord {
+    static let databaseTableName = "memory"
+    var id: UUID
+    var projectID: UUID
+    var chatID: UUID?
+    var role: String
+    var text: String
+    var vector: Data
+    var createdAt: Date
+}
+
+/// A retrievable snippet of earlier conversation.
+public struct MemoryItem: Sendable {
+    public let id: UUID
+    public let role: String
+    public let text: String
+    public let vector: [Float]
+}
+
+public struct MemoryRepository: Sendable {
+    let db: LoreDatabase
+    public init(_ db: LoreDatabase) { self.db = db }
+
+    public func insert(projectID: UUID, chatID: UUID?, role: String, text: String, embedding: [Float]) async throws {
+        let record = MemoryRecord(
+            id: UUID(), projectID: projectID, chatID: chatID, role: role, text: text,
+            vector: VectorCodec.encode(embedding), createdAt: Date()
+        )
+        try await db.dbQueue.write { db in try record.insert(db) }
+    }
+
+    /// All memory items for a project (small volume → ranked in memory).
+    public func all(projectID: UUID) async throws -> [MemoryItem] {
+        try await db.dbQueue.read { db in
+            try MemoryRecord
+                .filter(Column("projectID") == projectID)
+                .fetchAll(db)
+                .map { MemoryItem(id: $0.id, role: $0.role, text: $0.text, vector: VectorCodec.decode($0.vector)) }
+        }
+    }
+}
+
 /// A chunk retrieved for RAG, paired with its embedding vector.
 public struct EmbeddedChunk: Sendable {
     public let id: UUID
