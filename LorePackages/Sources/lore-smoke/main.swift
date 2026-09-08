@@ -88,7 +88,7 @@ let passages = ordered.enumerated().map { idx, chunk in
 
 // 4. Ask the model
 let messages = PromptBuilder().build(
-    projectSystemPrompt: nil, passages: passages, metadata: [:], history: [], question: question
+    projectSystemPrompt: nil, library: [], passages: passages, metadata: [:], history: [], question: question
 )
 log("\n• Answer:")
 var answer = ""
@@ -121,7 +121,7 @@ log(gotWarranty ? "✅ Extracted purchase/warranty date." : "⚠️ Warranty/pur
 let warrantyQ = "Is the warranty still valid?"
 log("\n• Question: \(warrantyQ)")
 let warrantyMessages = PromptBuilder().build(
-    projectSystemPrompt: nil, passages: passages, metadata: facts, history: [], question: warrantyQ
+    projectSystemPrompt: nil, library: [], passages: passages, metadata: facts, history: [], question: warrantyQ
 )
 var warrantyAnswer = ""
 for try await token in llm.chat(ChatRequest(model: "llama3.1:8b", messages: warrantyMessages)) {

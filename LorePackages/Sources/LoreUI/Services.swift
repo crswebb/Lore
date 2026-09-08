@@ -191,6 +191,9 @@ public struct RetrievalResult: Sendable {
     public let passages: [RetrievedPassage]
     public let citations: [Citation]
     public let metadata: [String: String]
+    /// Every document in the project (title + facts) so aggregate questions like
+    /// "what do I have?" see the full picture, not just the top passages.
+    public let library: [LibraryItem]
 }
 
 /// Hybrid retrieval: dense vector + keyword FTS, fused with RRF.
@@ -215,6 +218,10 @@ public struct RetrievalService: Sendable {
     }
 
     public func retrieve(projectID: UUID, question: String) async throws -> RetrievalResult {
+        // Full project inventory — always provided to the model.
+        let allDocuments = try await documents.documents(inProject: projectID)
+        let library = allDocuments.map { LibraryItem(title: $0.title, facts: $0.metadata) }
+
         let queryVector = try await embedder.embed(question)
 
         async let embeddingsTask = chunks.embeddings(projectID: projectID)
@@ -230,7 +237,7 @@ public struct RetrievalService: Sendable {
         let fused = ReciprocalRankFusion().fuse([vectorIDs, keywordIDs])
         let selected = Array(fused.prefix(topK))
         guard !selected.isEmpty else {
-            return RetrievalResult(passages: [], citations: [], metadata: [:])
+            return RetrievalResult(passages: [], citations: [], metadata: [:], library: library)
         }
 
         // Fetch chunk rows and restore fused order.
@@ -262,7 +269,7 @@ public struct RetrievalService: Sendable {
             }
         }
 
-        return RetrievalResult(passages: passages, citations: citations, metadata: metadata)
+        return RetrievalResult(passages: passages, citations: citations, metadata: metadata, library: library)
     }
 }
 
@@ -294,6 +301,7 @@ public struct ChatService: Sendable {
         let result = try await retrieval.retrieve(projectID: project.id, question: question)
         let messages = promptBuilder.build(
             projectSystemPrompt: project.systemPrompt,
+            library: result.library,
             passages: result.passages,
             metadata: result.metadata,
             history: history,
