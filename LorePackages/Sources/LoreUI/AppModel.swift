@@ -556,6 +556,18 @@ public final class AppModel {
             return
         }
 
+        // Guardrail: only handle questions about this project's products /
+        // documents (and fetching/managing them). Decline anything off-topic.
+        if await scopeAllows(trimmed) == false {
+            let decline = Message(
+                chatID: chatID, role: .assistant,
+                text: "I can only help with the documents and products in this project. Ask me about your products, or ask me to fetch a manual or technical specs for one of them."
+            )
+            messages.append(decline)
+            try? await chatsRepo.add(decline)
+            return
+        }
+
         let history = Array(messages.dropLast())
             .suffix(6)
             .map { ChatTurn(role: $0.role, content: $0.text) }
@@ -595,6 +607,54 @@ public final class AppModel {
             messages[assistantIndex].text = "⚠️ \(error.localizedDescription)"
             report(error)
         }
+    }
+
+    /// Deterministic scope gate: a tight one-word classifier decides whether a
+    /// message is about the user's own products/documents (RELATED) or off-topic
+    /// (OFFTOPIC). Fails OPEN (allows) on error/ambiguity so it never blocks a
+    /// legitimate product question; only a clear OFFTOPIC verdict declines.
+    private func scopeAllows(_ question: String) async -> Bool {
+        var products: [String] = []
+        for doc in documents {
+            products.append(doc.title)
+            if let p = doc.metadata["products"] { products += p.components(separatedBy: ";") }
+            if let m = doc.metadata["model"] { products.append(m) }
+        }
+        let list = products
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .prefix(24)
+            .joined(separator: ", ")
+
+        let system = """
+        You are a strict router for a personal product-knowledge assistant. The \
+        user's project is about their OWN products and documents. Classify the \
+        user's message as:
+        - RELATED: about their products/documents, using or troubleshooting them, \
+        their specs/warranty/purchase, or a request to find/fetch info or \
+        documentation for them, or to add/remove/update their products.
+        - OFFTOPIC: general knowledge, coding, math, trivia, world facts, news, \
+        creative writing, or anything not about the user's own items.
+        Answer with exactly one word: RELATED or OFFTOPIC.
+        """
+        let user = "Products/documents in the project: \(list.isEmpty ? "(none yet)" : list).\n\nUser message: \"\(question)\""
+        let request = ChatRequest(
+            model: settings.chatModel,
+            messages: [ChatTurn(role: .system, content: system), ChatTurn(role: .user, content: user)],
+            temperature: 0
+        )
+        var output = ""
+        do {
+            for try await token in llm.chat(request) {
+                if token.isDone { break }
+                output += token.text
+                if output.count > 40 { break }
+            }
+        } catch {
+            return true // fail open
+        }
+        let upper = output.uppercased()
+        return !(upper.contains("OFFTOPIC") && !upper.contains("RELATED"))
     }
 
     /// Embed a message and store it as retrievable chat memory. Best-effort.
