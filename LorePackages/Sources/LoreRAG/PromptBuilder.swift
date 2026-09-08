@@ -51,9 +51,12 @@ public struct PromptBuilder: Sendable {
 
     Rules:
     - For questions about what the user has/owns or to list or count things \
-    (e.g. "what products do I have"), enumerate EVERY entry in the PROJECT \
-    LIBRARY — do not limit yourself to the CONTEXT excerpts, which are only a \
-    partial sample. A user manual for a product means the user owns that product.
+    (e.g. "what products do I have", "what do I own"), enumerate the items from \
+    the PROJECT LIBRARY — do not limit yourself to the CONTEXT excerpts, which \
+    are only a partial sample. Every product named in a document's facts (an \
+    invoice's/receipt's products, a manual's subject product) is something the \
+    user OWNS. Never reply that you can't find what they own when the PROJECT \
+    LIBRARY has entries — list those products.
     - For specific/detail questions, rely on the CONTEXT and cite the passages \
     you use with bracketed numbers like [1] or [2] matching the CONTEXT labels. \
     (The PROJECT LIBRARY is background and needs no citation.)

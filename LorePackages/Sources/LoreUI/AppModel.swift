@@ -243,6 +243,27 @@ public final class AppModel {
 
     // MARK: Citation sources
 
+    /// Keep only the citations the answer referenced via `[n]` markers (which
+    /// map to CONTEXT passage labels 1…N), preserving citation order. Handles
+    /// `[1]`, `[2][3]`, and `[1, 2, 4]`. If nothing is cited, returns [].
+    static func citedCitations(in text: String, from all: [Citation]) -> [Citation] {
+        guard !all.isEmpty else { return [] }
+        var ordered: [Int] = []
+        var seen = Set<Int>()
+        let ns = text as NSString
+        if let regex = try? NSRegularExpression(pattern: #"\[([0-9][0-9,\s]*)\]"#) {
+            for match in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                let group = ns.substring(with: match.range(at: 1))
+                for part in group.components(separatedBy: CharacterSet(charactersIn: ", ")) {
+                    if let n = Int(part), n >= 1, n <= all.count, seen.insert(n).inserted {
+                        ordered.append(n)
+                    }
+                }
+            }
+        }
+        return ordered.map { all[$0 - 1] }
+    }
+
     public struct SourceDetails: Sendable, Identifiable {
         public var id: UUID { citation.chunkID }
         public let citation: Citation
@@ -458,14 +479,17 @@ public final class AppModel {
                 history: history,
                 question: trimmed
             )
-            assistant.citations = handle.citations
-            messages[assistantIndex].citations = handle.citations
-
             for try await token in handle.stream {
                 if token.isDone { break }
                 assistant.text += token.text
                 messages[assistantIndex].text = assistant.text
             }
+            // Show only the sources the answer actually cited ([1], [2], …), so
+            // an inventory answer drawn from the library doesn't list unrelated
+            // retrieved passages as its sources.
+            let cited = Self.citedCitations(in: assistant.text, from: handle.citations)
+            assistant.citations = cited
+            messages[assistantIndex].citations = cited
             try? await chatsRepo.add(assistant)
         } catch {
             messages[assistantIndex].text = "⚠️ \(error.localizedDescription)"
