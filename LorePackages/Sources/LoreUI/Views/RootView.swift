@@ -38,7 +38,8 @@ public struct RootView: View {
                 )
             }
         }
-        .background(LoreBackground())
+        .background(AdaptiveBackground(translucency: model.settings.windowTranslucency))
+        .background(WindowConfigurator())
         .environment(model)
         .task { await model.bootstrap() }
         .sheet(isPresented: $model.showSetup) {

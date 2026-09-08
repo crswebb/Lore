@@ -26,6 +26,10 @@ public final class SettingsStore {
     public var onboardingComplete: Bool {
         didSet { defaults.set(onboardingComplete, forKey: "onboardingComplete") }
     }
+    /// 0 = solid window, 1 = maximally translucent (desktop shows through).
+    public var windowTranslucency: Double {
+        didSet { defaults.set(windowTranslucency, forKey: "windowTranslucency") }
+    }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -33,6 +37,7 @@ public final class SettingsStore {
         self.embeddingModel = defaults.string(forKey: "embeddingModel") ?? OllamaModelCatalog.defaultEmbeddingModel
         self.ollamaBaseURLString = defaults.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
         self.onboardingComplete = defaults.bool(forKey: "onboardingComplete")
+        self.windowTranslucency = (defaults.object(forKey: "windowTranslucency") as? Double) ?? 0.25
     }
 
     public var ollamaBaseURL: URL {

@@ -35,6 +35,20 @@ public struct SettingsView: View {
                 }
             }
 
+            Section("Appearance") {
+                VStack(alignment: .leading, spacing: 4) {
+                    Slider(value: $settings.windowTranslucency, in: 0...1) {
+                        Text("Background transparency")
+                    } minimumValueLabel: {
+                        Image(systemName: "square.fill")
+                    } maximumValueLabel: {
+                        Image(systemName: "square.dashed")
+                    }
+                    Text("Let the desktop shine through for a glassier feel. Takes effect immediately.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+
             Section {
                 Button("Manage local models…") { model.showSetup = true }
                 Text("Download or switch models, and verify the local runtime.")
