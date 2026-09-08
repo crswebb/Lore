@@ -172,6 +172,8 @@ struct MessageBubble: View {
     let documents: [Document]
     var onOpenCitation: (Citation) -> Void = { _ in }
 
+    @State private var showSources = false
+
     private var isUser: Bool { message.role == .user }
 
     var body: some View {
@@ -182,7 +184,7 @@ struct MessageBubble: View {
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if !message.citations.isEmpty {
-                    citationChips
+                    sourcesSection
                 }
             }
             .padding(14)
@@ -194,6 +196,30 @@ struct MessageBubble: View {
             if !isUser { Spacer(minLength: 40) }
         }
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+    }
+
+    private var sourcesSection: some View {
+        let count = dedupedCitations.count
+        return VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) { showSources.toggle() }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.right")
+                        .rotationEffect(.degrees(showSources ? 90 : 0))
+                        .font(.caption2)
+                    Text("\(count) source" + (count == 1 ? "" : "s"))
+                        .font(.caption2)
+                }
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if showSources {
+                citationChips
+            }
+        }
     }
 
     private var citationChips: some View {
