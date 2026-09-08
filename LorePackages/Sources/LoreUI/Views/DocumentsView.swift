@@ -85,6 +85,7 @@ struct DocumentsView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
     }
 
     private var emptyState: some View {

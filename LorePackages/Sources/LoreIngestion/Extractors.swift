@@ -1,5 +1,7 @@
 import Foundation
 import PDFKit
+import Vision
+import CoreGraphics
 import SwiftSoup
 import LoreCore
 
@@ -63,8 +65,16 @@ public struct TextExtractor: Sendable {
 }
 
 /// PDF files, one `Page` per PDF page so citations can point at page numbers.
+///
+/// Falls back to on-device OCR (Vision) for pages with no text layer — so
+/// scanned or image-based PDFs like many invoices/receipts still work.
 public struct PDFExtractor: Sendable {
-    public init() {}
+    /// Languages hinted to the OCR engine.
+    public var ocrLanguages: [String]
+
+    public init(ocrLanguages: [String] = ["sv", "en"]) {
+        self.ocrLanguages = ocrLanguages
+    }
 
     public func extract(fileURL: URL) throws -> ExtractedContent {
         guard let doc = PDFDocument(url: fileURL) else {
@@ -73,7 +83,11 @@ public struct PDFExtractor: Sendable {
         var pages: [ExtractedContent.Page] = []
         for index in 0..<doc.pageCount {
             guard let page = doc.page(at: index) else { continue }
-            let text = (page.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            var text = (page.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if text.isEmpty {
+                text = Self.ocr(page: page, languages: ocrLanguages)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
             guard !text.isEmpty else { continue }
             pages.append(ExtractedContent.Page(pageNumber: index + 1, text: text))
         }
@@ -85,6 +99,41 @@ public struct PDFExtractor: Sendable {
             pages: pages,
             pageCount: doc.pageCount
         )
+    }
+
+    /// Render a PDF page to a bitmap and recognize text with Vision.
+    static func ocr(page: PDFPage, languages: [String], scale: CGFloat = 2.0) -> String {
+        let rect = page.bounds(for: .mediaBox)
+        let width = Int(rect.width * scale), height = Int(rect.height * scale)
+        guard width > 0, height > 0,
+              let context = CGContext(
+                data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              ) else { return "" }
+
+        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        context.scaleBy(x: scale, y: scale)
+        context.translateBy(x: -rect.minX, y: -rect.minY)
+        page.draw(with: .mediaBox, to: context)
+
+        guard let image = context.makeImage() else { return "" }
+
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.recognitionLanguages = languages
+        request.usesLanguageCorrection = true
+
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        do {
+            try handler.perform([request])
+        } catch {
+            return ""
+        }
+        return (request.results ?? [])
+            .compactMap { $0.topCandidates(1).first?.string }
+            .joined(separator: "\n")
     }
 }
 

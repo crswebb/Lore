@@ -30,6 +30,7 @@ struct SidebarView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
         .alert("Rename project", isPresented: Binding(
             get: { renamingProject != nil },
             set: { if !$0 { renamingProject = nil } }

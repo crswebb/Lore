@@ -25,6 +25,7 @@ struct ChatListView: View {
                     }
             }
         }
+        .scrollContentBackground(.hidden)
         .navigationTitle("Chats")
         .toolbar {
             ToolbarItem {
