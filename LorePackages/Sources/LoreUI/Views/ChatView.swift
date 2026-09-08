@@ -97,19 +97,8 @@ struct ChatView: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            TextField("Ask your project…", text: $draft, axis: .vertical)
-                .textFieldStyle(.plain)
-                .lineLimit(1...6)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .onKeyPress { keyPress in
-                    // Enter sends; Shift+Enter (and every other key) passes through.
-                    guard keyPress.key == .return, !keyPress.modifiers.contains(.shift) else {
-                        return .ignored
-                    }
-                    send()
-                    return .handled
-                }
+            GrowingTextEditor(text: $draft, placeholder: "Ask your project…", onSubmit: send)
+                .padding(8)
 
             Button(action: send) {
                 Image(systemName: "arrow.up.circle.fill")
