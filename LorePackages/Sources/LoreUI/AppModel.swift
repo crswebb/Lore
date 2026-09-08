@@ -3,6 +3,7 @@ import Observation
 import LoreCore
 import LorePersistence
 import LoreProviders
+import LoreIngestion
 import LoreRAG
 
 /// The app's single source of truth: owns the database, providers, and services,
@@ -35,9 +36,25 @@ public final class AppModel {
 
     public var health: ProviderHealth = .installedNotRunning
     public var showSetup = false
+    public var showDocuments = false          // documents inspector, hidden by default
     public var isResponding = false
     public var errorMessage: String?
     public var indexingDocumentIDs: Set<UUID> = []
+
+    // Manual-fetch flow
+    @ObservationIgnored let manualFinder = ManualFinderService()
+    public var manualPrompt: ManualPrompt?
+    public var showManualResults = false
+    public var manualSearching = false
+    public var manualCandidates: [ManualCandidate] = []
+    public var addedManualURLs: Set<URL> = []
+    @ObservationIgnored private var manualQuery = ""
+
+    public struct ManualPrompt: Identifiable, Sendable {
+        public let id = UUID()
+        public let productLabel: String
+        public let query: String
+    }
 
     public var selectedProject: Project? {
         guard let id = selectedProjectID else { return nil }
@@ -124,6 +141,13 @@ public final class AppModel {
         catch { report(error) }
     }
 
+    public func renameProject(_ id: UUID, to name: String) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, var project = projects.first(where: { $0.id == id }) else { return }
+        project.name = trimmed
+        await updateProject(project)
+    }
+
     public func select(project id: UUID) async {
         selectedProjectID = id
         await refreshDocuments()
@@ -159,9 +183,9 @@ public final class AppModel {
         }
     }
 
-    public func addWebLink(_ url: URL) async {
+    public func addWebLink(_ url: URL, title: String? = nil) async {
         guard let pid = selectedProjectID else { return }
-        let doc = Document(projectID: pid, kind: .webLink, title: url.host ?? url.absoluteString, sourceURL: url)
+        let doc = Document(projectID: pid, kind: .webLink, title: title ?? url.host ?? url.absoluteString, sourceURL: url)
         await add(doc)
     }
 
@@ -201,6 +225,17 @@ public final class AppModel {
                 doc.metadata = merged
                 try await documentsRepo.save(doc)
             }
+
+            // If we identified a product, offer to fetch its user manual.
+            // (Not for web links, which may themselves already be a manual.)
+            if doc.kind != .webLink {
+                let vendor = merged["vendor"] ?? ""
+                let modelName = merged["model"] ?? ""
+                let label = [vendor, modelName].filter { !$0.isEmpty }.joined(separator: " ")
+                if !modelName.isEmpty {
+                    manualPrompt = ManualPrompt(productLabel: label, query: "\(label) user manual")
+                }
+            }
         } catch {
             // Fact extraction is a bonus; never surface its failures.
         }
@@ -224,6 +259,63 @@ public final class AppModel {
         } catch {
             return nil
         }
+    }
+
+    // MARK: Manual fetching
+
+    /// User accepted the "look for the manual?" offer → run the web search.
+    public func confirmManualSearch() {
+        guard let prompt = manualPrompt else { return }
+        manualQuery = prompt.query
+        manualPrompt = nil
+        manualCandidates = []
+        addedManualURLs = []
+        showManualResults = true
+        Task { await runManualSearch() }
+    }
+
+    public func runManualSearch() async {
+        manualSearching = true
+        defer { manualSearching = false }
+        do {
+            manualCandidates = try await manualFinder.search(query: manualQuery)
+        } catch {
+            manualCandidates = []
+            report(error)
+        }
+    }
+
+    /// Add a chosen manual to the project. PDFs are downloaded and stored as a
+    /// local PDF document; everything else is added as a web link.
+    public func addManual(_ candidate: ManualCandidate) async {
+        guard let pid = selectedProjectID else { return }
+        addedManualURLs.insert(candidate.url)
+        if candidate.isPDF {
+            do {
+                let (data, _) = try await URLSession.shared.data(from: candidate.url)
+                let dir = try Self.manualsDirectory()
+                let fileURL = dir.appendingPathComponent("\(UUID().uuidString).pdf")
+                try data.write(to: fileURL)
+                let doc = Document(
+                    projectID: pid, kind: .pdf, title: candidate.title,
+                    sourceURL: fileURL, fileBookmark: FileAccess.makeBookmark(for: fileURL)
+                )
+                await add(doc)
+            } catch {
+                report(error)
+            }
+        } else {
+            await addWebLink(candidate.url, title: candidate.title)
+        }
+    }
+
+    private static func manualsDirectory() throws -> URL {
+        let base = try FileManager.default.url(
+            for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
+        )
+        let dir = base.appendingPathComponent("Lore/manuals", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
     }
 
     public func deleteDocument(_ id: UUID) async {
@@ -262,6 +354,14 @@ public final class AppModel {
     public func select(chat id: UUID) async {
         selectedChatID = id
         await refreshMessages()
+    }
+
+    public func renameChat(_ id: UUID, to title: String) async {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, var chat = chats.first(where: { $0.id == id }) else { return }
+        chat.title = trimmed
+        do { try await chatsRepo.save(chat); await refreshChats() }
+        catch { report(error) }
     }
 
     public func deleteChat(_ id: UUID) async {

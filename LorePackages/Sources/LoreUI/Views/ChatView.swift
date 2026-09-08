@@ -134,27 +134,12 @@ struct ChatView: View {
     @ToolbarContentBuilder
     private var chatToolbar: some ToolbarContent {
         ToolbarItem {
-            Menu {
-                Button("New Chat", systemImage: "plus") { Task { await model.newChat() } }
-                if !model.chats.isEmpty {
-                    Divider()
-                    ForEach(model.chats) { chat in
-                        Button {
-                            Task { await model.select(chat: chat.id) }
-                        } label: {
-                            Label(chat.title, systemImage: chat.id == model.selectedChatID ? "checkmark" : "bubble.left")
-                        }
-                    }
-                    Divider()
-                    if let current = model.selectedChatID {
-                        Button("Delete This Chat", systemImage: "trash", role: .destructive) {
-                            Task { await model.deleteChat(current) }
-                        }
-                    }
-                }
+            Button {
+                model.showDocuments.toggle()
             } label: {
-                Label("Chats", systemImage: "bubble.left.and.bubble.right")
+                Label("Documents", systemImage: "sidebar.right")
             }
+            .help("Show or hide documents")
         }
     }
 

@@ -28,6 +28,14 @@ struct LoreApp: App {
         .commands {
             CommandGroup(replacing: .newItem) {}
         }
+
+        Settings {
+            if let model {
+                SettingsView(model: model)
+            } else {
+                Text("Starting Lore…").padding(40)
+            }
+        }
     }
 
     private func start() {

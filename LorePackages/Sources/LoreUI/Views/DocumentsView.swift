@@ -3,7 +3,9 @@ import UniformTypeIdentifiers
 import LoreCore
 import LoreDesignSystem
 
-struct ProjectDetailView: View {
+/// The documents panel — shown in the right-hand inspector (hidden by default).
+/// Kept lightweight since most time is spent chatting, not administrating docs.
+struct DocumentsView: View {
     @Environment(AppModel.self) private var model
 
     @State private var showFileImporter = false
@@ -16,6 +18,53 @@ struct ProjectDetailView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            list
+        }
+        .dropDestination(for: URL.self) { urls, _ in
+            let fileURLs = urls.filter { $0.isFileURL }
+            guard !fileURLs.isEmpty else { return false }
+            Task { await model.addFiles(fileURLs) }
+            return true
+        } isTargeted: { dropTargeted = $0 }
+        .overlay {
+            if dropTargeted {
+                RoundedRectangle(cornerRadius: LoreTheme.cornerRadius)
+                    .strokeBorder(LoreTheme.accent, style: StrokeStyle(lineWidth: 2, dash: [8]))
+                    .padding(6)
+            }
+        }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: allowedTypes,
+            allowsMultipleSelection: true
+        ) { result in
+            if case let .success(urls) = result { Task { await model.addFiles(urls) } }
+        }
+        .sheet(isPresented: $showLinkSheet) { AddLinkSheet().environment(model) }
+        .sheet(item: $metadataDocument) { doc in MetadataSheet(document: doc).environment(model) }
+    }
+
+    private var header: some View {
+        HStack {
+            Text("Documents").font(.headline)
+            Spacer()
+            Menu {
+                Button("Add Files…", systemImage: "doc.badge.plus") { showFileImporter = true }
+                Button("Add Link…", systemImage: "link.badge.plus") { showLinkSheet = true }
+            } label: {
+                Image(systemName: "plus")
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    private var list: some View {
         List {
             if model.documents.isEmpty {
                 emptyState
@@ -36,57 +85,21 @@ struct ProjectDetailView: View {
                 }
             }
         }
-        .navigationTitle(model.selectedProject?.name ?? "Project")
-        .dropDestination(for: URL.self) { urls, _ in
-            let fileURLs = urls.filter { $0.isFileURL }
-            guard !fileURLs.isEmpty else { return false }
-            Task { await model.addFiles(fileURLs) }
-            return true
-        } isTargeted: { dropTargeted = $0 }
-        .overlay {
-            if dropTargeted {
-                RoundedRectangle(cornerRadius: LoreTheme.cornerRadius)
-                    .strokeBorder(LoreTheme.accent, style: StrokeStyle(lineWidth: 2, dash: [8]))
-                    .padding(6)
-            }
-        }
-        .toolbar {
-            ToolbarItemGroup {
-                Button { showFileImporter = true } label: {
-                    Label("Add Files", systemImage: "doc.badge.plus")
-                }
-                Button { showLinkSheet = true } label: {
-                    Label("Add Link", systemImage: "link.badge.plus")
-                }
-            }
-        }
-        .fileImporter(
-            isPresented: $showFileImporter,
-            allowedContentTypes: allowedTypes,
-            allowsMultipleSelection: true
-        ) { result in
-            if case let .success(urls) = result {
-                Task { await model.addFiles(urls) }
-            }
-        }
-        .sheet(isPresented: $showLinkSheet) { AddLinkSheet().environment(model) }
-        .sheet(item: $metadataDocument) { doc in MetadataSheet(document: doc).environment(model) }
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Image(systemName: "tray.and.arrow.down")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
-            Text("Add PDFs, text files, or web links")
-                .font(.headline)
-            Text("Drag files here, or use the buttons above. Everything is processed and stored locally.")
+            Text("No documents yet").font(.headline)
+            Text("Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 30)
         .listRowSeparator(.hidden)
     }
 }

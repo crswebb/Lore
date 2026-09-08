@@ -131,4 +131,14 @@ for try await token in llm.chat(ChatRequest(model: "llama3.1:8b", messages: warr
 }
 print("\n")
 
+// 8. Manual finder (web search)
+log("\n• Searching the web for a user manual…")
+let candidates = try await ManualFinderService().search(query: "IKEA DIRIGERA hub user manual", limit: 6)
+if candidates.isEmpty {
+    log("⚠️ No candidates returned (search may be rate-limited).")
+} else {
+    for c in candidates { log("  \(c.isPDF ? "[PDF]" : "[web]") \(c.title) — \(c.url.host ?? "")") }
+    log("✅ Manual search returned \(candidates.count) candidates.")
+}
+
 exit(grounded ? 0 : 2)
