@@ -15,10 +15,11 @@ struct GrowingTextEditor: View {
     @State private var measuredHeight: CGFloat = 22
 
     private let font: Font = .body
-    // Horizontal inset TextEditor applies to its text; match it in the mirror so
-    // the two wrap at the same width.
-    private let hInset: CGFloat = 5
-    private let vInset: CGFloat = 8
+    // The NSTextView's internal insets are zeroed (see CocoaTextViewConfigurator),
+    // so text and placeholder sit flush and all spacing is controlled by the
+    // caller's padding. Keep the mirror flush to match.
+    private let hInset: CGFloat = 0
+    private let vInset: CGFloat = 0
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -48,7 +49,7 @@ struct GrowingTextEditor: View {
                 .font(font)
                 .scrollContentBackground(.hidden)
                 .scrollIndicators(.hidden)
-                .background(ScrollerHider())
+                .background(CocoaTextViewConfigurator())
                 .frame(height: min(max(measuredHeight, minHeight), maxHeight))
                 .onKeyPress { keyPress in
                     // Enter sends; Shift+Enter inserts a newline; other keys pass through.
@@ -70,27 +71,31 @@ private struct EditorHeightKey: PreferenceKey {
     }
 }
 
-/// Hides the scroller on the composer's TextEditor by disabling it on the
-/// underlying NSScrollView. Scoped to scroll views whose document is an
-/// NSTextView, so it never touches the sidebar/list scrollers.
-private struct ScrollerHider: NSViewRepresentable {
+/// Tidies the composer's underlying NSTextView: hides its scroller and zeroes
+/// its text insets so all spacing is controlled by SwiftUI padding. Scoped to
+/// scroll views whose document is an NSTextView, so it never touches the
+/// sidebar/list scrollers.
+private struct CocoaTextViewConfigurator: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async { hideScrollers(around: view) }
+        DispatchQueue.main.async { configure(around: view) }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { hideScrollers(around: nsView) }
+        DispatchQueue.main.async { configure(around: nsView) }
     }
 
-    private func hideScrollers(around view: NSView) {
+    private func configure(around view: NSView) {
         guard let root = view.window?.contentView else { return }
         func walk(_ v: NSView) {
-            if let scroll = v as? NSScrollView, scroll.documentView is NSTextView {
+            if let scroll = v as? NSScrollView, let textView = scroll.documentView as? NSTextView {
                 scroll.hasVerticalScroller = false
                 scroll.hasHorizontalScroller = false
                 scroll.verticalScroller?.alphaValue = 0
+                textView.textContainerInset = .zero
+                textView.textContainer?.lineFragmentPadding = 0
+                textView.drawsBackground = false
             }
             v.subviews.forEach(walk)
         }

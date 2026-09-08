@@ -98,7 +98,8 @@ struct ChatView: View {
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 10) {
             GrowingTextEditor(text: $draft, placeholder: "Ask your project…", onSubmit: send)
-                .padding(8)
+                .padding(.leading, 16)
+                .padding(.vertical, 11)
 
             Button(action: send) {
                 Image(systemName: "arrow.up.circle.fill")
@@ -107,11 +108,13 @@ struct ChatView: View {
             }
             .buttonStyle(.plain)
             .disabled(!canSend)
-            .padding(.trailing, 6)
-            .padding(.bottom, 6)
+            .padding(.trailing, 8)
+            .padding(.bottom, 7)
         }
-        .loreGlass()
-        .padding(16)
+        .loreGlass(cornerRadius: 22)
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .padding(.bottom, 14)
         .overlay(alignment: .top) {
             if model.isResponding {
                 ProgressView().controlSize(.small).padding(.top, 2)
