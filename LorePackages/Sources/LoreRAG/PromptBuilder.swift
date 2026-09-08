@@ -61,6 +61,11 @@ public struct PromptBuilder: Sendable {
 
         var userContent = ""
 
+        // Give the model today's date so it can reason about warranties, expiry,
+        // "how old is this", etc.
+        let today = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
+        userContent += "Today's date: \(today)\n\n"
+
         if !metadata.isEmpty {
             userContent += "KNOWN FACTS:\n"
             for (key, value) in metadata.sorted(by: { $0.key < $1.key }) {

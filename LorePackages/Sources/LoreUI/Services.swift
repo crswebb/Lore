@@ -91,7 +91,9 @@ public struct IndexingService: Sendable {
     }
 
     /// Index (or re-index) a document. Progress is reflected in `document.status`.
-    public func index(_ document: Document) async throws {
+    /// Returns the extracted full text (so callers can run fact extraction on it).
+    @discardableResult
+    public func index(_ document: Document) async throws -> String {
         var doc = document
         do {
             // 1. Extract.
@@ -139,6 +141,7 @@ public struct IndexingService: Sendable {
             doc.contentHash = ContentHash.of(content.fullText)
             doc.status = .ready
             try await documents.save(doc)
+            return content.fullText
         } catch {
             doc.status = .failed
             try? await documents.save(doc)
@@ -293,6 +296,74 @@ public struct ChatService: Sendable {
         )
         let stream = llm.chat(ChatRequest(model: model, messages: messages))
         return AnswerHandle(citations: result.citations, passages: result.passages, stream: stream)
+    }
+}
+
+// MARK: - Metadata extraction (M6)
+
+/// Best-effort structured-fact extraction: asks the chat model to pull vendor /
+/// purchase date / warranty etc. out of a document, as JSON. Failures are
+/// swallowed by the caller — this only ever *adds* facts, never blocks ingest.
+public struct MetadataExtractor: Sendable {
+    let llm: any LLMProvider
+
+    public init(llm: any LLMProvider) { self.llm = llm }
+
+    /// Fields we try to populate. Kept small and practical.
+    public static let fields = ["vendor", "purchaseDate", "warrantyUntil", "model", "serialNumber"]
+
+    public func extract(text: String, model: String) async throws -> [String: String] {
+        let snippet = String(text.prefix(4000))
+        let system = "You extract structured facts from documents. Output ONLY a minified JSON object, no prose, no code fences."
+        let prompt = """
+        From the document below, extract any of these fields that are clearly present:
+        - vendor (store or seller name)
+        - purchaseDate (ISO 8601 yyyy-mm-dd)
+        - warrantyUntil (ISO 8601 yyyy-mm-dd; if the document gives a purchase date and a warranty length, compute the end date)
+        - model (product model name/number)
+        - serialNumber
+        Return a JSON object containing ONLY the fields you actually found. If none, return {}.
+
+        Document:
+        \(snippet)
+        """
+        let request = ChatRequest(
+            model: model,
+            messages: [ChatTurn(role: .system, content: system), ChatTurn(role: .user, content: prompt)],
+            temperature: 0
+        )
+        var raw = ""
+        for try await token in llm.chat(request) {
+            if token.isDone { break }
+            raw += token.text
+        }
+        return Self.parse(raw)
+    }
+
+    /// Pull the first JSON object out of the model's reply and flatten it to strings.
+    static func parse(_ raw: String) -> [String: String] {
+        guard let start = raw.firstIndex(of: "{"), let end = raw.lastIndex(of: "}"), start < end else {
+            return [:]
+        }
+        let json = String(raw[start...end])
+        guard let data = json.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return [:] }
+
+        var result: [String: String] = [:]
+        for (key, value) in object {
+            let string: String
+            switch value {
+            case let s as String: string = s
+            case let n as NSNumber: string = n.stringValue
+            default: continue
+            }
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, trimmed.lowercased() != "null", fields.contains(key) {
+                result[key] = trimmed
+            }
+        }
+        return result
     }
 }
 

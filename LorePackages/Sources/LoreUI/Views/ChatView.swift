@@ -5,6 +5,7 @@ import LoreDesignSystem
 struct ChatView: View {
     @Environment(AppModel.self) private var model
     @State private var draft = ""
+    @State private var inspecting: Citation?
 
     private let examples = [
         "Summarize what's in this project.",
@@ -26,6 +27,9 @@ struct ChatView: View {
         }
         .navigationTitle(currentChatTitle)
         .toolbar { chatToolbar }
+        .sheet(item: $inspecting) { citation in
+            SourceView(citation: citation).environment(model)
+        }
     }
 
     // MARK: Messages
@@ -38,8 +42,10 @@ struct ChatView: View {
                         emptyState
                     }
                     ForEach(model.messages) { message in
-                        MessageBubble(message: message, documents: model.documents)
-                            .id(message.id)
+                        MessageBubble(message: message, documents: model.documents) { citation in
+                            inspecting = citation
+                        }
+                        .id(message.id)
                     }
                 }
                 .padding(20)
@@ -172,6 +178,7 @@ struct ChatView: View {
 struct MessageBubble: View {
     let message: Message
     let documents: [Document]
+    var onOpenCitation: (Citation) -> Void = { _ in }
 
     private var isUser: Bool { message.role == .user }
 
@@ -200,25 +207,32 @@ struct MessageBubble: View {
     private var citationChips: some View {
         let refs = dedupedCitations
         return FlowLayout(spacing: 6) {
-            ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in
-                HStack(spacing: 4) {
-                    Image(systemName: "doc.text").font(.caption2)
-                    Text(ref).font(.caption2)
+            ForEach(refs, id: \.label) { ref in
+                Button {
+                    onOpenCitation(ref.citation)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.text").font(.caption2)
+                        Text(ref.label).font(.caption2)
+                        Image(systemName: "arrow.up.right").font(.system(size: 8))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.quaternary, in: .capsule)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(.quaternary, in: .capsule)
+                .buttonStyle(.plain)
+                .help("View source")
             }
         }
     }
 
-    private var dedupedCitations: [String] {
+    private var dedupedCitations: [(label: String, citation: Citation)] {
         var seen = Set<String>()
-        var result: [String] = []
+        var result: [(label: String, citation: Citation)] = []
         for citation in message.citations {
             let title = documents.first { $0.id == citation.documentID }?.title ?? "Source"
             let label = citation.page.map { "\(title) p.\($0)" } ?? title
-            if seen.insert(label).inserted { result.append(label) }
+            if seen.insert(label).inserted { result.append((label, citation)) }
         }
         return result
     }

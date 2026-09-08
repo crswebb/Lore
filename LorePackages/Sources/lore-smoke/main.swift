@@ -4,6 +4,7 @@ import LorePersistence
 import LoreProviders
 import LoreIngestion
 import LoreRAG
+import LoreUI
 
 // End-to-end smoke test: ingest a small document, then ask a question and
 // confirm a grounded, cited answer comes back — all against live Ollama.
@@ -98,7 +99,7 @@ for try await token in llm.chat(ChatRequest(model: "llama3.1:8b", messages: mess
 }
 print("\n")
 
-// 5. Verdict
+// 5. Verdict on the grounded answer
 let lower = answer.lowercased()
 let grounded = lower.contains("drain") || lower.contains("filter") || lower.contains("hose")
 let cited = answer.contains("[1]") || answer.contains("[2]") || answer.contains("[3]") || answer.contains("[4]")
@@ -106,4 +107,28 @@ log("——")
 log(grounded ? "✅ Answer is grounded in the manual (mentions drain/filter/hose)."
              : "⚠️ Answer did not mention expected grounded terms.")
 log(cited ? "✅ Answer includes a citation marker." : "⚠️ No citation marker found.")
+
+// 6. M6 — automatic fact extraction
+log("\n• Extracting facts (M6)…")
+let facts = try await MetadataExtractor(llm: llm).extract(text: content.fullText, model: "llama3.1:8b")
+for (k, v) in facts.sorted(by: { $0.key < $1.key }) { log("  \(k): \(v)") }
+let gotVendor = facts["vendor"] != nil
+let gotWarranty = facts["warrantyUntil"] != nil || facts["purchaseDate"] != nil
+log(gotVendor ? "✅ Extracted vendor." : "⚠️ Vendor not extracted.")
+log(gotWarranty ? "✅ Extracted purchase/warranty date." : "⚠️ Warranty/purchase date not extracted.")
+
+// 7. Warranty question, with facts + today's date injected
+let warrantyQ = "Is the warranty still valid?"
+log("\n• Question: \(warrantyQ)")
+let warrantyMessages = PromptBuilder().build(
+    projectSystemPrompt: nil, passages: passages, metadata: facts, history: [], question: warrantyQ
+)
+var warrantyAnswer = ""
+for try await token in llm.chat(ChatRequest(model: "llama3.1:8b", messages: warrantyMessages)) {
+    if token.isDone { break }
+    warrantyAnswer += token.text
+    print(token.text, terminator: ""); fflush(stdout)
+}
+print("\n")
+
 exit(grounded ? 0 : 2)

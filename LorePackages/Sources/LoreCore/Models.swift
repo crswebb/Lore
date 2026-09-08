@@ -149,10 +149,13 @@ public enum MessageRole: String, Hashable, Sendable, Codable {
 }
 
 /// A pointer from an assistant message back to the source it was grounded in.
-public struct Citation: Hashable, Sendable, Codable {
+public struct Citation: Hashable, Sendable, Codable, Identifiable {
     public var documentID: UUID
     public var chunkID: UUID
     public var page: Int?
+
+    /// Stable identity for SwiftUI (the chunk a citation points at is unique).
+    public var id: UUID { chunkID }
 
     public init(documentID: UUID, chunkID: UUID, page: Int? = nil) {
         self.documentID = documentID

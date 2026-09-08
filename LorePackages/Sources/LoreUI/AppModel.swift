@@ -23,6 +23,7 @@ public final class AppModel {
     @ObservationIgnored var llm: OllamaProvider
     @ObservationIgnored var indexing: IndexingService
     @ObservationIgnored var chatService: ChatService
+    @ObservationIgnored var metadataExtractor: MetadataExtractor
 
     // UI state
     public var projects: [Project] = []
@@ -67,6 +68,7 @@ public final class AppModel {
         self.indexing = IndexingService(documents: documentsRepo, chunks: chunksRepo, embedder: embedder)
         let retrieval = RetrievalService(chunks: chunksRepo, documents: documentsRepo, embedder: embedder)
         self.chatService = ChatService(retrieval: retrieval, llm: llm)
+        self.metadataExtractor = MetadataExtractor(llm: llm)
     }
 
     // MARK: Bootstrap
@@ -179,11 +181,49 @@ public final class AppModel {
         indexingDocumentIDs.insert(document.id)
         defer { indexingDocumentIDs.remove(document.id) }
         do {
-            try await indexing.index(document)
+            let text = try await indexing.index(document)
+            await extractFacts(for: document.id, text: text)
         } catch {
             report(error)
         }
         await refreshDocuments()
+    }
+
+    /// Best-effort: fill in structured facts the user hasn't already set.
+    private func extractFacts(for documentID: UUID, text: String) async {
+        guard !text.isEmpty else { return }
+        do {
+            let facts = try await metadataExtractor.extract(text: text, model: settings.chatModel)
+            guard !facts.isEmpty, var doc = try await documentsRepo.document(id: documentID) else { return }
+            var merged = doc.metadata
+            for (key, value) in facts where merged[key] == nil { merged[key] = value }
+            if merged != doc.metadata {
+                doc.metadata = merged
+                try await documentsRepo.save(doc)
+            }
+        } catch {
+            // Fact extraction is a bonus; never surface its failures.
+        }
+    }
+
+    // MARK: Citation sources
+
+    public struct SourceDetails: Sendable, Identifiable {
+        public var id: UUID { citation.chunkID }
+        public let citation: Citation
+        public let document: Document
+        public let passage: String
+    }
+
+    /// Resolve a citation to the document + the exact passage that was retrieved.
+    public func sourceDetails(for citation: Citation) async -> SourceDetails? {
+        do {
+            guard let document = try await documentsRepo.document(id: citation.documentID) else { return nil }
+            let chunk = try await chunksRepo.chunks(ids: [citation.chunkID]).first
+            return SourceDetails(citation: citation, document: document, passage: chunk?.text ?? "")
+        } catch {
+            return nil
+        }
     }
 
     public func deleteDocument(_ id: UUID) async {
