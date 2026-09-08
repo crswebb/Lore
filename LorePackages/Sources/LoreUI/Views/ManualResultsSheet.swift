@@ -12,7 +12,7 @@ struct ManualResultsSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Image(systemName: "doc.text.magnifyingglass").font(.title2).foregroundStyle(LoreTheme.accent)
-                Text("User manuals").font(.title2.bold())
+                Text(model.webResultsHeading).font(.title2.bold())
                 Spacer()
             }
             Text("Pick the ones to add to this project. PDFs are downloaded and stored; pages are indexed by their link.")

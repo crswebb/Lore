@@ -45,6 +45,7 @@ public final class AppModel {
     @ObservationIgnored let manualFinder = ManualFinderService()
     public var manualPrompt: ManualPrompt?
     public var showManualResults = false
+    public var webResultsHeading = "User manuals"
     public var manualSearching = false
     public var manualCandidates: [ManualCandidate] = []
     public var addedManualURLs: Set<URL> = []
@@ -289,6 +290,7 @@ public final class AppModel {
         guard let prompt = manualPrompt else { return }
         manualQuery = prompt.query
         manualPrompt = nil
+        webResultsHeading = "User manuals"
         manualCandidates = []
         addedManualURLs = []
         showManualResults = true
@@ -330,34 +332,104 @@ public final class AppModel {
         }
     }
 
-    /// Detect a "fetch/download the manual for X" request and extract X.
-    /// Returns nil for content questions *about* a manual (what/how/where…).
-    static func manualFetchQuery(from text: String) -> String? {
+    enum WebFetchKind {
+        case manual, specs, web
+        var querySuffix: String {
+            switch self {
+            case .manual: return "user manual"
+            case .specs: return "technical specifications"
+            case .web: return ""
+            }
+        }
+        var heading: String {
+            switch self {
+            case .manual: return "User manuals"
+            case .specs: return "Technical specifications"
+            case .web: return "Web results"
+            }
+        }
+        var ackNoun: String {
+            switch self {
+            case .manual: return "a user manual"
+            case .specs: return "the technical specifications"
+            case .web: return "information"
+            }
+        }
+    }
+
+    /// Detect a request to fetch something from the web — a manual, technical
+    /// specs, or a general search — and return the target product + kind.
+    /// Returns nil for content questions (what/how/…) and for requests that
+    /// refer to the existing documents ("find X in the manual").
+    static func webFetchIntent(from text: String) -> (rawProduct: String, kind: WebFetchKind)? {
         let lower = text.lowercased()
-        let fetchVerbs = ["hämta", "ladda ner", "ladda", "fetch", "download", "skaffa", "find me", "get me", "leta upp", "sök upp", "sök efter"]
+        let fetchVerbs = ["hämta", "ladda ner", "ladda", "fetch", "download", "skaffa",
+                          "hitta", "find", "sök", "search", "leta", "look up", "slå upp", "google"]
         let manualNouns = ["manual", "bruksanvisning", "handbok", "user guide", "instruktionsbok", "instruction"]
-        // Content-question words → this is a question about the manual, not a fetch.
-        let questionWords = ["vad ", "what ", "hur ", "how ", "var ", "where ", "när ", "when ", "varför ", "why ", "vilken sida", "which page"]
+        let specNouns = ["specifikation", "teknisk", "tekniska", "specs", "datablad", "datasheet", "specification"]
+        let webNouns = ["internet", "webben", "nätet", "online", "web"]
+        let questionWords = ["vad ", "what ", "hur ", "how ", "var ", "where ", "när ", "when ", "varför ", "why "]
+        // Phrases that mean "look inside my existing docs", not fetch new ones.
+        let inDocsPhrases = ["i manualen", "i dokument", "i texten", "in the manual", "in the document", "in the docs", "i mina dokument"]
 
         guard fetchVerbs.contains(where: { lower.contains($0) }),
-              manualNouns.contains(where: { lower.contains($0) }),
-              !questionWords.contains(where: { lower.contains($0) })
+              !questionWords.contains(where: { lower.contains($0) }),
+              !inDocsPhrases.contains(where: { lower.contains($0) })
+        else { return nil }
+
+        let kind: WebFetchKind
+        if specNouns.contains(where: { lower.contains($0) }) { kind = .specs }
+        else if manualNouns.contains(where: { lower.contains($0) }) { kind = .manual }
+        else if webNouns.contains(where: { lower.contains($0) }) { kind = .web }
         else { return nil }
 
         var product = text
-        if let range = lower.range(of: "för ") {
-            product = String(text[range.upperBound...])
-        } else if let range = lower.range(of: "for ") {
-            product = String(text[range.upperBound...])
-        } else {
+        if let range = lower.range(of: "för ") { product = String(text[range.upperBound...]) }
+        else if let range = lower.range(of: "for ") { product = String(text[range.upperBound...]) }
+        else if let range = lower.range(of: "efter ") { product = String(text[range.upperBound...]) }
+        else {
             var cleaned = lower
-            for word in fetchVerbs + manualNouns + ["den", "the", "du", "kan", "please", "min", "mitt", "my", "en", "ett", "a ", "an "] {
+            for word in fetchVerbs + manualNouns + specNouns + webNouns + ["på ", "den ", "the ", "du ", "kan ", "please", "en ", "ett ", "a ", "an "] {
                 cleaned = cleaned.replacingOccurrences(of: word, with: " ")
             }
             product = cleaned
         }
         product = product.trimmingCharacters(in: CharacterSet(charactersIn: " ?.!,:;\"'"))
-        return product.isEmpty ? nil : product
+        return product.isEmpty ? nil : (product, kind)
+    }
+
+    /// Resolve a possibly-generic product reference ("min dator", "my screen")
+    /// to a concrete product named in the project's documents, when possible.
+    func resolveProductName(_ raw: String) -> String {
+        let lower = raw.lowercased().trimmingCharacters(in: .whitespaces)
+        let genericComputer = ["min dator", "datorn", "dator", "my computer", "the computer", "computer",
+                               "min laptop", "laptop", "min bärbara", "macen", "min mac"]
+        let genericScreen = ["min skärm", "skärmen", "skärm", "my screen", "the screen", "screen",
+                            "min monitor", "monitorn", "monitor", "display", "min bildskärm", "bildskärmen", "bildskärm"]
+
+        func inventoryProducts() -> [String] {
+            var out: [String] = []
+            for doc in documents {
+                if let products = doc.metadata["products"] {
+                    out += products.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+                }
+                if let model = doc.metadata["model"] { out.append(model) }
+            }
+            return out.filter { !$0.isEmpty }
+        }
+        func firstMatch(_ keywords: [String]) -> String? {
+            inventoryProducts().first { product in
+                keywords.contains { product.lowercased().contains($0) }
+            }
+        }
+
+        if genericComputer.contains(where: { lower == $0 }) {
+            if let match = firstMatch(["macbook", "laptop", "notebook", "imac", " pc", "dator"]) { return match }
+        }
+        if genericScreen.contains(where: { lower == $0 }) {
+            if let match = firstMatch(["monitor", "skärm", "display", "curved"]) { return match }
+        }
+        return raw
     }
 
     private static func manualsDirectory() throws -> URL {
@@ -461,16 +533,20 @@ public final class AppModel {
             await renameChatFromFirstQuestion(chatID: chatID, question: trimmed)
         }
 
-        // Chat-triggered manual fetch: if the user asks to fetch/download a
-        // manual for something, run the web search instead of a RAG answer.
-        if let product = Self.manualFetchQuery(from: trimmed) {
+        // Chat-triggered web fetch: if the user asks to fetch a manual, specs,
+        // or to search the web for something, run the search instead of a RAG
+        // answer and let them add results to the project.
+        if let intent = Self.webFetchIntent(from: trimmed) {
+            let product = resolveProductName(intent.rawProduct)
+            let query = intent.kind == .web ? product : "\(product) \(intent.kind.querySuffix)"
             let ack = Message(
                 chatID: chatID, role: .assistant,
-                text: "Searching the web for a user manual matching “\(product)”. I'll show the results in a panel — pick any to add to this project."
+                text: "Searching the web for \(intent.kind.ackNoun) for “\(product)”. I'll show the results in a panel — pick any to add to this project."
             )
             messages.append(ack)
             try? await chatsRepo.add(ack)
-            manualQuery = "\(product) user manual"
+            webResultsHeading = intent.kind.heading
+            manualQuery = query
             manualCandidates = []
             addedManualURLs = []
             showManualResults = true
