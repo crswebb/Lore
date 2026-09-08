@@ -7,6 +7,10 @@ struct ChatView: View {
     @State private var draft = ""
     @State private var inspecting: Citation?
 
+    private var projectTint: Color {
+        LoreTheme.color(hex: model.selectedProject?.colorTint ?? "#4F8EF7")
+    }
+
     private let examples = [
         "Summarize what's in this project.",
         "What should I do about error code F01?",
@@ -42,7 +46,7 @@ struct ChatView: View {
                         emptyState
                     }
                     ForEach(model.messages) { message in
-                        MessageBubble(message: message, documents: model.documents) { citation in
+                        MessageBubble(message: message, documents: model.documents, tint: projectTint) { citation in
                             inspecting = citation
                         }
                         .id(message.id)
@@ -109,7 +113,7 @@ struct ChatView: View {
             Button(action: send) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.title)
-                    .foregroundStyle(canSend ? LoreTheme.accent : .secondary)
+                    .foregroundStyle(canSend ? projectTint : .secondary)
             }
             .buttonStyle(.plain)
             .disabled(!canSend)
@@ -170,6 +174,7 @@ struct ChatView: View {
 struct MessageBubble: View {
     let message: Message
     let documents: [Document]
+    var tint: Color = LoreTheme.accent
     var onOpenCitation: (Citation) -> Void = { _ in }
 
     @State private var showSources = false
@@ -189,7 +194,7 @@ struct MessageBubble: View {
             }
             .padding(14)
             .background(
-                isUser ? AnyShapeStyle(LoreTheme.accent.opacity(0.22)) : AnyShapeStyle(.regularMaterial),
+                isUser ? AnyShapeStyle(tint.opacity(0.28)) : AnyShapeStyle(.regularMaterial),
                 in: .rect(cornerRadius: LoreTheme.cornerRadius)
             )
             .frame(maxWidth: 620, alignment: isUser ? .trailing : .leading)
