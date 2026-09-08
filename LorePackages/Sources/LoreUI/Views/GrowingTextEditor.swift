@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// A multiline text input that word-wraps and grows with its content, up to a
 /// max height (then scrolls). Uses TextEditor (native NSTextView) for correct
@@ -46,6 +47,8 @@ struct GrowingTextEditor: View {
             TextEditor(text: $text)
                 .font(font)
                 .scrollContentBackground(.hidden)
+                .scrollIndicators(.hidden)
+                .background(ScrollerHider())
                 .frame(height: min(max(measuredHeight, minHeight), maxHeight))
                 .onKeyPress { keyPress in
                     // Enter sends; Shift+Enter inserts a newline; other keys pass through.
@@ -64,5 +67,33 @@ private struct EditorHeightKey: PreferenceKey {
     static let defaultValue: CGFloat = 22
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+/// Hides the scroller on the composer's TextEditor by disabling it on the
+/// underlying NSScrollView. Scoped to scroll views whose document is an
+/// NSTextView, so it never touches the sidebar/list scrollers.
+private struct ScrollerHider: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { hideScrollers(around: view) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { hideScrollers(around: nsView) }
+    }
+
+    private func hideScrollers(around view: NSView) {
+        guard let root = view.window?.contentView else { return }
+        func walk(_ v: NSView) {
+            if let scroll = v as? NSScrollView, scroll.documentView is NSTextView {
+                scroll.hasVerticalScroller = false
+                scroll.hasHorizontalScroller = false
+                scroll.verticalScroller?.alphaValue = 0
+            }
+            v.subviews.forEach(walk)
+        }
+        walk(root)
     }
 }
