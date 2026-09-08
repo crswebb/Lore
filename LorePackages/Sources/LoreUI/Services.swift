@@ -1,0 +1,328 @@
+import Foundation
+import CryptoKit
+import LoreCore
+import LorePersistence
+import LoreProviders
+import LoreIngestion
+import LoreRAG
+
+// MARK: - Settings
+
+/// User preferences, backed by UserDefaults.
+@MainActor
+@Observable
+public final class SettingsStore {
+    @ObservationIgnored private let defaults: UserDefaults
+
+    public var chatModel: String {
+        didSet { defaults.set(chatModel, forKey: "chatModel") }
+    }
+    public var embeddingModel: String {
+        didSet { defaults.set(embeddingModel, forKey: "embeddingModel") }
+    }
+    public var ollamaBaseURLString: String {
+        didSet { defaults.set(ollamaBaseURLString, forKey: "ollamaBaseURL") }
+    }
+    public var onboardingComplete: Bool {
+        didSet { defaults.set(onboardingComplete, forKey: "onboardingComplete") }
+    }
+
+    public init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.chatModel = defaults.string(forKey: "chatModel") ?? OllamaModelCatalog.chatModels[0].name
+        self.embeddingModel = defaults.string(forKey: "embeddingModel") ?? OllamaModelCatalog.defaultEmbeddingModel
+        self.ollamaBaseURLString = defaults.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
+        self.onboardingComplete = defaults.bool(forKey: "onboardingComplete")
+    }
+
+    public var ollamaBaseURL: URL {
+        URL(string: ollamaBaseURLString) ?? URL(string: "http://localhost:11434")!
+    }
+}
+
+// MARK: - Helpers
+
+enum ContentHash {
+    static func of(_ string: String) -> String {
+        let digest = SHA256.hash(data: Data(string.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+/// Resolves a document back to a readable file URL, handling security-scoped
+/// bookmarks (sandboxed) and falling back to a stored path (dev / unsandboxed).
+struct FileAccess {
+    static func resolve(bookmark: Data?, fallback: URL?) -> (url: URL, stopAccess: () -> Void)? {
+        if let bookmark {
+            var stale = false
+            if let url = try? URL(
+                resolvingBookmarkData: bookmark,
+                options: [.withSecurityScope],
+                relativeTo: nil,
+                bookmarkDataIsStale: &stale
+            ) {
+                let didAccess = url.startAccessingSecurityScopedResource()
+                return (url, { if didAccess { url.stopAccessingSecurityScopedResource() } })
+            }
+        }
+        if let fallback { return (fallback, {}) }
+        return nil
+    }
+
+    static func makeBookmark(for url: URL) -> Data? {
+        try? url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+    }
+}
+
+// MARK: - Indexing
+
+/// Extracts, chunks, embeds, and stores a document's content.
+public struct IndexingService: Sendable {
+    let documents: DocumentRepository
+    let chunks: ChunkRepository
+    let embedder: any EmbeddingProvider
+    let chunker: Chunker
+
+    public init(documents: DocumentRepository, chunks: ChunkRepository, embedder: any EmbeddingProvider) {
+        self.documents = documents
+        self.chunks = chunks
+        self.embedder = embedder
+        self.chunker = Chunker()
+    }
+
+    /// Index (or re-index) a document. Progress is reflected in `document.status`.
+    public func index(_ document: Document) async throws {
+        var doc = document
+        do {
+            // 1. Extract.
+            doc.status = .extracting
+            try await documents.save(doc)
+            let content = try await extract(doc)
+
+            // 2. Chunk (per page so PDF citations carry a page number).
+            doc.status = .chunking
+            try await documents.save(doc)
+            var drafts: [ChunkDraft] = []
+            var ordinal = 0
+            for page in content.pages {
+                let pageDrafts = chunker.chunk(page.text, page: page.pageNumber, startingOrdinal: ordinal)
+                drafts.append(contentsOf: pageDrafts)
+                ordinal += pageDrafts.count
+            }
+            guard !drafts.isEmpty else { throw IngestionError.emptyContent }
+
+            // 3. Embed + store. Clear any prior chunks first (re-index safety).
+            doc.status = .embedding
+            try await documents.save(doc)
+            try await chunks.deleteChunks(documentID: doc.id)
+
+            let vectors = try await embedder.embed(drafts.map(\.text))
+            guard vectors.count == drafts.count else {
+                throw IndexingError.embeddingCountMismatch
+            }
+            for (draft, vector) in zip(drafts, vectors) {
+                let chunk = Chunk(
+                    documentID: doc.id,
+                    ordinal: draft.ordinal,
+                    text: draft.text,
+                    page: draft.page,
+                    tokenCount: draft.approximateTokenCount,
+                    embeddingModel: embedder.model,
+                    embeddingDimensions: embedder.dimensions
+                )
+                try await chunks.insert(chunk, projectID: doc.projectID, embedding: vector)
+            }
+
+            // 4. Finalize.
+            doc.title = doc.title.isEmpty ? content.title : doc.title
+            doc.pageCount = content.pageCount
+            doc.contentHash = ContentHash.of(content.fullText)
+            doc.status = .ready
+            try await documents.save(doc)
+        } catch {
+            doc.status = .failed
+            try? await documents.save(doc)
+            throw error
+        }
+    }
+
+    private func extract(_ doc: Document) async throws -> ExtractedContent {
+        switch doc.kind {
+        case .webLink:
+            guard let url = doc.sourceURL else { throw IngestionError.emptyContent }
+            return try await WebExtractor().extract(url: url)
+        case .pdf:
+            guard let access = FileAccess.resolve(bookmark: doc.fileBookmark, fallback: doc.sourceURL) else {
+                throw IngestionError.emptyContent
+            }
+            defer { access.stopAccess() }
+            return try PDFExtractor().extract(fileURL: access.url)
+        case .text, .markdown:
+            guard let access = FileAccess.resolve(bookmark: doc.fileBookmark, fallback: doc.sourceURL) else {
+                throw IngestionError.emptyContent
+            }
+            defer { access.stopAccess() }
+            return try TextExtractor().extract(fileURL: access.url)
+        }
+    }
+}
+
+public enum IndexingError: Error, LocalizedError {
+    case embeddingCountMismatch
+
+    public var errorDescription: String? {
+        switch self {
+        case .embeddingCountMismatch: return "The embedding model returned an unexpected number of vectors."
+        }
+    }
+}
+
+// MARK: - Retrieval
+
+public struct RetrievalResult: Sendable {
+    public let passages: [RetrievedPassage]
+    public let citations: [Citation]
+    public let metadata: [String: String]
+}
+
+/// Hybrid retrieval: dense vector + keyword FTS, fused with RRF.
+public struct RetrievalService: Sendable {
+    let chunks: ChunkRepository
+    let documents: DocumentRepository
+    let embedder: any EmbeddingProvider
+    let topK: Int
+    let candidatePool: Int
+
+    public init(
+        chunks: ChunkRepository,
+        documents: DocumentRepository,
+        embedder: any EmbeddingProvider,
+        topK: Int = 6
+    ) {
+        self.chunks = chunks
+        self.documents = documents
+        self.embedder = embedder
+        self.topK = topK
+        self.candidatePool = topK * 4
+    }
+
+    public func retrieve(projectID: UUID, question: String) async throws -> RetrievalResult {
+        let queryVector = try await embedder.embed(question)
+
+        async let embeddingsTask = chunks.embeddings(projectID: projectID)
+        async let keywordTask = chunks.keywordSearch(projectID: projectID, query: question, limit: candidatePool)
+        let (embedded, keywordIDs) = try await (embeddingsTask, keywordTask)
+
+        let vectorIDs = VectorSearch.rank(
+            query: queryVector,
+            candidates: embedded.map { (id: $0.id, vector: $0.vector) },
+            topN: candidatePool
+        )
+
+        let fused = ReciprocalRankFusion().fuse([vectorIDs, keywordIDs])
+        let selected = Array(fused.prefix(topK))
+        guard !selected.isEmpty else {
+            return RetrievalResult(passages: [], citations: [], metadata: [:])
+        }
+
+        // Fetch chunk rows and restore fused order.
+        let fetched = try await chunks.chunks(ids: selected)
+        let byID = Dictionary(uniqueKeysWithValues: fetched.map { ($0.id, $0) })
+        let orderedChunks = selected.compactMap { byID[$0] }
+
+        // Resolve document titles + metadata for citations.
+        let docIDs = Set(orderedChunks.map(\.documentID))
+        var docs: [UUID: Document] = [:]
+        for id in docIDs {
+            if let doc = try await documents.document(id: id) { docs[id] = doc }
+        }
+
+        var passages: [RetrievedPassage] = []
+        var citations: [Citation] = []
+        var metadata: [String: String] = [:]
+        for (offset, chunk) in orderedChunks.enumerated() {
+            let doc = docs[chunk.documentID]
+            passages.append(RetrievedPassage(
+                index: offset + 1,
+                sourceTitle: doc?.title ?? "Document",
+                page: chunk.page,
+                text: chunk.text
+            ))
+            citations.append(Citation(documentID: chunk.documentID, chunkID: chunk.id, page: chunk.page))
+            if let docMeta = doc?.metadata {
+                metadata.merge(docMeta) { _, new in new }
+            }
+        }
+
+        return RetrievalResult(passages: passages, citations: citations, metadata: metadata)
+    }
+}
+
+// MARK: - Chat
+
+public struct AnswerHandle: Sendable {
+    public let citations: [Citation]
+    public let passages: [RetrievedPassage]
+    public let stream: AsyncThrowingStream<ChatToken, Error>
+}
+
+/// Ties retrieval + prompt building + the model together for one answer.
+public struct ChatService: Sendable {
+    let retrieval: RetrievalService
+    let llm: any LLMProvider
+    let promptBuilder = PromptBuilder()
+
+    public init(retrieval: RetrievalService, llm: any LLMProvider) {
+        self.retrieval = retrieval
+        self.llm = llm
+    }
+
+    public func prepareAnswer(
+        project: Project,
+        model: String,
+        history: [ChatTurn],
+        question: String
+    ) async throws -> AnswerHandle {
+        let result = try await retrieval.retrieve(projectID: project.id, question: question)
+        let messages = promptBuilder.build(
+            projectSystemPrompt: project.systemPrompt,
+            passages: result.passages,
+            metadata: result.metadata,
+            history: history,
+            question: question
+        )
+        let stream = llm.chat(ChatRequest(model: model, messages: messages))
+        return AnswerHandle(citations: result.citations, passages: result.passages, stream: stream)
+    }
+}
+
+// MARK: - Ollama setup
+
+/// Health + model management for the setup wizard.
+public struct OllamaSetupService: Sendable {
+    let provider: OllamaProvider
+
+    public init(provider: OllamaProvider) {
+        self.provider = provider
+    }
+
+    /// Known Homebrew / installer locations for the `ollama` binary.
+    private static let binaryPaths = [
+        "/opt/homebrew/bin/ollama",
+        "/usr/local/bin/ollama",
+        "/Applications/Ollama.app/Contents/Resources/ollama",
+    ]
+
+    public func health() async -> ProviderHealth {
+        let health = await provider.availability()
+        if case .installedNotRunning = health {
+            let installed = Self.binaryPaths.contains { FileManager.default.fileExists(atPath: $0) }
+            return installed ? .installedNotRunning : .notInstalled
+        }
+        return health
+    }
+
+    public func pull(model: String) -> AsyncThrowingStream<PullProgress, Error> {
+        provider.pull(model: model)
+    }
+}
