@@ -73,6 +73,12 @@ let package = Package(
             ]
         ),
 
+        // Headless end-to-end smoke test against a live Ollama daemon.
+        .executableTarget(
+            name: "lore-smoke",
+            dependencies: ["LoreCore", "LorePersistence", "LoreProviders", "LoreIngestion", "LoreRAG"]
+        ),
+
         .testTarget(
             name: "LoreRAGTests",
             dependencies: ["LoreRAG"]
