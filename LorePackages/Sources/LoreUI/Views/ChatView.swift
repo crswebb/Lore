@@ -100,6 +100,7 @@ struct ChatView: View {
             TextField("Ask your project…", text: $draft, axis: .vertical)
                 .textFieldStyle(.plain)
                 .lineLimit(1...6)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(12)
                 .onKeyPress { keyPress in
