@@ -371,10 +371,24 @@ public final class AppModel {
 
     public func deleteDocument(_ id: UUID) async {
         do {
+            let document = try await documentsRepo.document(id: id)
             try await chunksRepo.deleteChunks(documentID: id)
             try await documentsRepo.delete(id: id)
+            if let document { Self.removeManagedFile(for: document) }
             await refreshDocuments()
         } catch { report(error) }
+    }
+
+    /// Delete the on-disk copy ONLY for files Lore downloaded into its own
+    /// manuals folder. Files the user added from their own folders are
+    /// referenced (never copied), so their originals are never touched.
+    static func removeManagedFile(for document: Document) {
+        guard let url = document.sourceURL, url.isFileURL,
+              let manualsDir = try? manualsDirectory() else { return }
+        let parent = url.deletingLastPathComponent().standardizedFileURL
+        if parent == manualsDir.standardizedFileURL {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     public func setMetadata(_ metadata: [String: String], for document: Document) async {
