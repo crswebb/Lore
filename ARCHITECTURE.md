@@ -1,14 +1,26 @@
-# Lore — Architecture Plan
+# Lore — Architecture
 
 > **Lore** · *Explore your lore.*
 >
-> A native macOS app for building private, local-LLM-powered knowledge "projects":
-> collections of documents, links, and chat that let you *ask questions and get
-> answers grounded in your own material* — 100% on-device.
+> A native macOS app for building private, local-LLM-powered knowledge
+> **shelves**: collections of documents, links, and chat that let you *ask
+> questions and get answers grounded in your own material* — 100% on-device.
 >
 > **Scope: this is a long-lived product.** Decisions below optimize for
 > maintainability, testability, and extensibility over multiple years — not for
 > the fastest possible first demo.
+
+> **Status.** This document describes the implemented system, and notes where
+> reality differs from the original plan (⚙️ *implementation note*) and what is
+> still on the roadmap (see §12). Two intentional simplifications from the first
+> plan: vector search is **brute-force cosine over stored embeddings** (not
+> `sqlite-vec` yet), and the app currently ships **unsandboxed** as a
+> local/dev build (App Sandbox is M7 hardening). Beyond Ollama, chat also runs on
+> **Apple Intelligence** (the default) and any **OpenAI-compatible API**.
+
+> **Terminology.** What the UI calls a **Shelf** is modelled in code and the
+> database as a `project` / `Project`. The rename was user-facing only; the
+> schema and type names still say "project".
 
 ---
 
@@ -35,14 +47,16 @@ warranty is still valid."*
 |---|---|---|
 | Language | **Swift 6**, strict concurrency | Long-term Apple platform alignment; async/await throughout. |
 | UI | **SwiftUI** + **Liquid Glass** | `NavigationSplitView`, `glassEffect()`, `GlassEffectContainer`, `.buttonStyle(.glass)`. |
-| Persistence | **GRDB (SQLite)** | Explicit schema + **versioned migrations**, `FTS5` full-text, and **sqlite-vec** vector index in one file. Far more control than SwiftData for a data-heavy, long-lived app. |
-| Vector search | **sqlite-vec** extension | Persistent, indexed ANN search that scales with the corpus; no re-loading everything into memory. |
+| Persistence | **GRDB (SQLite)** | Explicit schema + **versioned migrations** and `FTS5` full-text in one file. Far more control than SwiftData for a data-heavy, long-lived app. |
+| Vector search | **Brute-force cosine** over `Float32` BLOBs | ⚙️ Dependency-free, correct, and fast enough for personal-scale corpora. `sqlite-vec` is the documented scale-up path and can replace it behind the same call sites. |
 | Full-text search | **SQLite FTS5** | Powers the keyword half of hybrid retrieval. |
-| PDF parsing | **PDFKit** (built-in) | Text + per-page extraction for citations. |
-| Web ingest | **URLSession** + **SwiftSoup** | Real HTML parsing / readability extraction beats naive stripping. |
-| LLM runtime | **Ollama** (default), behind a provider protocol | Scriptable API (detect/list/pull/chat/embed). Protocol allows LM Studio / llama.cpp / remote later. |
+| PDF parsing | **PDFKit** + **Vision OCR** | Text + per-page extraction for citations; ⚙️ Vision `VNRecognizeTextRequest` fallback recovers text from scanned/image PDFs. |
+| Web ingest | **URLSession** + **SwiftSoup** | Real HTML parsing / readability extraction beats naive stripping. Also powers on-request manual/spec search. |
+| Chat runtime | **Apple Intelligence** (default), **Ollama**, or **OpenAI-compatible API** | ⚙️ All three sit behind `LLMProvider`. Apple = zero-setup on-device; Ollama = local models via a setup wizard; External = bring-your-own cloud endpoint (chat only; embeddings stay local). |
+| Embeddings | **Apple `NLContextualEmbedding`** (512-dim) or **Ollama `nomic-embed-text`** (768-dim) | ⚙️ On-device either way; chosen automatically based on the active runtime. |
+| Localization | **App-bundle `.lproj`** + a small `L()` helper | ⚙️ en/de/es/fr/sv UI, switchable live at runtime (see §7). |
 | Networking | **URLSession** (streaming) | Native; no HTTP client dependency. |
-| Updates | **Sparkle** | Standard, well-maintained auto-update for non-App-Store Mac apps. |
+| Updates | **Sparkle** *(planned, M7)* | Standard auto-update for non-App-Store Mac apps. |
 
 **Dependency policy:** lean but not dogmatically zero. Each third-party lib
 (GRDB, sqlite-vec, SwiftSoup, Sparkle) is mature, widely used, and replaces code
@@ -80,8 +94,20 @@ protocol EmbeddingProvider {
 }
 ```
 
-Concrete impls in v1: `OllamaProvider` (both protocols). Future impls
-(`LMStudioProvider`, `LlamaCppProvider`, a remote gateway) drop in without
+Concrete implementations that ship today:
+
+- **`OllamaProvider`** — chat (NDJSON stream) and embeddings against a local
+  Ollama daemon; also drives the setup wizard (detect / list / pull with progress).
+- **`AppleFoundationModelProvider`** — chat via `FoundationModels`
+  (`SystemLanguageModel` / `LanguageModelSession`). The zero-setup default.
+- **`OpenAICompatibleProvider`** — chat via any OpenAI-compatible `/chat/completions`
+  SSE endpoint (bring-your-own key, stored in the Keychain).
+- **`OllamaEmbeddingProvider`** and **`AppleEmbeddingProvider`**
+  (`NLContextualEmbedding`, mean-pooled, 512-dim) for the embedding side.
+
+`AppModel.reconfigureProviders()` selects the chat provider from the user’s
+"Chat runs on" setting and the embedder from whichever local runtime is
+available. Future impls (LM Studio, llama.cpp, a remote gateway) drop in without
 touching feature code. Embeddings carry their **model name + dimension** so we
 can detect and handle a change of embedding model (see §5 re-embedding).
 
@@ -100,17 +126,24 @@ document(id, project_id, kind, title, source_url, file_bookmark,
 document_metadata(document_id, key, value)     -- vendor, purchase_date, warranty_until…
 
 chunk(id, document_id, ordinal, text, page,
-      token_count, embedding_model, embedding_dim)
-
-vec_chunk(chunk_id, embedding)                 -- sqlite-vec virtual table
+      token_count, embedding_model, embedding_dim,
+      embedding)                               -- Float32 vector as a BLOB (VectorCodec)
 chunk_fts(text)                                -- FTS5 virtual table (keyword half)
 
 chat(id, project_id, title, created_at)
 message(id, chat_id, role, text, created_at)
 citation(message_id, document_id, chunk_id, page)
 
+memory(id, project_id, role, text, embedding)  -- schema v2: embedded chat turns,
+                                               -- so past conversation is retrievable
+
 schema_version(version)                        -- migration bookkeeping
 ```
+
+⚙️ *Implementation note:* embeddings are stored inline as a `Float32` BLOB
+(encoded by `VectorCodec`) rather than in a `sqlite-vec` virtual table; search is
+brute-force cosine (`VectorSearch`). Same call sites, simpler dependency
+footprint — swap in `sqlite-vec` when corpus size demands it.
 
 - **Structured facts** (vendor, purchase date, warranty expiry) live in
   `document_metadata`. Filled by the user in a side panel *and* auto-extracted by
@@ -135,13 +168,27 @@ schema_version(version)                        -- migration bookkeeping
 6. Flip `status` to `.ready`; progress streamed to UI.
 
 **On question (hybrid retrieval):**
-1. Embed the question.
-2. **Vector** top-N via sqlite-vec **and** **keyword** top-N via FTS5.
-3. Fuse with **Reciprocal Rank Fusion**, take top-K (≈6). Hybrid beats either
+1. **Scope guardrail** — a fast, deterministic classifier call first decides
+   whether the question is about this shelf’s documents/products (or a fetch/manage
+   request). Off-topic questions are declined rather than answered from general
+   model knowledge.
+2. If the question is a **web-fetch intent** ("find the manual/specs for X"), run
+   a web search instead of RAG and offer the results for the user to add.
+3. Otherwise embed the question, then run **vector** top-N (brute-force cosine
+   over stored embeddings) **and** **keyword** top-N (FTS5).
+4. Fuse with **Reciprocal Rank Fusion**, take top-K (≈6). Hybrid beats either
    alone — great for exact codes like "F01" *and* fuzzy phrasing.
-4. Build prompt: system rules + delimited retrieved passages (source-labeled) +
-   injected structured metadata + recent turns + question.
-5. Stream the answer; render with **citation chips** → source doc/page.
+5. Pull relevant snippets from **chat memory** (embedded past turns) for
+   continuity.
+6. Build prompt: system rules + shelf inventory + delimited retrieved passages
+   (source-labeled) + injected structured metadata + memory notes + recent turns
+   + question.
+7. Stream the answer; render with **citation chips** → source doc/page.
+
+**Compact mode.** Apple’s on-device model has a small context window, so when the
+chat runtime is Apple, retrieval returns fewer/shorter passages, a capped
+inventory, and no memory notes, and the prompt uses a trimmed system prompt with
+a hard character cap.
 
 **Grounding:** system prompt requires answering only from provided context, and
 saying "I don't know from your documents" otherwise.
@@ -178,29 +225,38 @@ one-click retry; in-flight requests fail cleanly with a retry affordance.
 
 ```
 ┌────────────┬───────────────────────┬────────────────────────┐
-│  SIDEBAR   │   PROJECT / CONTENT   │        CHAT             │
+│  SIDEBAR   │    CHAT HISTORY       │        CHAT             │
 │ (glass)    │                       │  (glass bubbles)        │
-│ • House    │  Documents grid/list  │  Q: dishwasher F01      │
-│ • Car      │  [+ PDF / Link / Txt] │  A: … [manual p.12] ↩   │
-│ • Work     │  status: ● ready      │  ──────────────────     │
-│ + New      │  Metadata panel       │  [ ask your project… ]  │
-│ ⚙ status●  │  (vendor/warranty)    │                         │
+│ • House    │  • Summarize this…    │  Q: dishwasher F01      │
+│ • Car      │  • Warranty valid?    │  A: … [manual p.12] ↩   │
+│ • Work     │  + New Chat           │  ──────────────────     │
+│ + New Shelf│                       │  [ ask your shelf…   ]  │
+│ ⚙ status●  │            Documents ▸ (right-hand inspector)    │
 └────────────┴───────────────────────┴────────────────────────┘
 ```
 
-- **Sidebar**: translucent glass; projects with emoji/symbol + tint; "New
-  Project"; runtime status pill pinned bottom.
-- **Project detail**: document cards (drag-and-drop a PDF onto the window), per-doc
-  status, editable metadata panel.
-- **Chat**: glass bubbles inside a `GlassEffectContainer`, streaming tokens,
-  citation chips that jump to source. Empty state suggests example questions.
+The layout is a three-column `NavigationSplitView` — **Shelves** · **Chat
+history** · **Chat** — with **Documents** in a right-hand inspector that’s hidden
+by default (chatting is the primary activity; document admin is secondary).
+
+- **Sidebar**: translucent glass; shelves with emoji/symbol + tint; "New Shelf";
+  chat runtime status pill(s) pinned bottom.
+- **Documents inspector**: document rows (drag-and-drop a PDF onto the window),
+  per-doc status, editable facts (metadata) sheet, click-through to the source.
+- **Chat**: glass bubbles, streaming tokens, collapsible citation chips that jump
+  to source. Empty state suggests example questions. Composer is a growing
+  text editor (Enter sends, Shift+Enter for a newline).
+- **Settings** (⌘,): tabbed — **Models**, **Appearance** (glass transparency +
+  **UI language**), **Advanced** (chat provider + external API).
 - **Glass specifics**: `glassEffect(in:)` on floating panels & the composer;
   `.buttonStyle(.glass)` for primary actions; `GlassEffectContainer` to group
-  controls so highlights blend. Respect **Reduce Transparency** / **Increase
-  Contrast** and full Dynamic Type — accessibility is not optional in a long-lived
-  app.
+  controls so highlights blend. An adjustable transparency slider drives an
+  `AdaptiveBackground`.
 
-Drag-and-drop, ⌘N (new project), ⌘L (add link), full keyboard nav.
+**Localization.** UI strings resolve through an `L()` helper that reads the
+selected language’s `.lproj` from the app bundle (en/de/es/fr/sv), so switching
+language in Settings applies **live** without a relaunch. User content and model
+answers are never translated.
 
 ---
 
@@ -208,14 +264,20 @@ Drag-and-drop, ⌘N (new project), ⌘L (add link), full keyboard nav.
 
 - Data in `~/Library/Application Support/Lore/` (single SQLite DB + imported
   file copies / security-scoped bookmarks).
-- **No network egress** except (a) `localhost` runtime and (b) web links the user
-  explicitly adds (shown before fetch).
+- **No network egress** except (a) the `localhost` Ollama runtime, (b) web links
+  or manuals the user explicitly adds, and (c) an **external chat provider only if
+  the user deliberately selects one** — shown with a persistent banner while
+  active. Documents, embeddings, and the search index never leave the Mac.
 - **Prompt-injection defense (critical for RAG):** documents and fetched web
   pages are *untrusted data*, never instructions. Retrieved text goes in a clearly
   delimited block; the system prompt forbids treating it as commands. When tools
   land (post-v1) retrieved content can never trigger actions without user
   confirmation.
-- **App Sandbox** on; user-selected file access via security-scoped bookmarks.
+- **App Sandbox**: ⚙️ the current build ships **unsandboxed** and ad-hoc signed
+  for smooth local/dev first-run (talking to a locally-installed Ollama is simpler
+  without the sandbox). Enabling App Sandbox + entitlements with security-scoped
+  bookmarks is part of M7 hardening before Developer-ID distribution. File access
+  already resolves via security-scoped bookmarks where present (see `FileAccess`).
 - **Backups & integrity**: periodic DB checkpoint; export/import of a project as
   a portable bundle (docs + metadata) for backup and machine migration.
 
@@ -226,18 +288,23 @@ Drag-and-drop, ⌘N (new project), ⌘L (add link), full keyboard nav.
 Modularized from day one so features stay isolated and testable:
 
 ```
-LoreApp/                 // thin app target: wiring, entry point
-Packages/
+App/                     // thin app target: entry point, Assets, *.lproj strings
+project.yml              // XcodeGen spec — source of truth for Lore.xcodeproj (generated)
+LorePackages/            // one Swift package, several library targets:
   LoreCore/              // domain models, protocols (LLMProvider, EmbeddingProvider), errors
-  LorePersistence/       // GRDB stack, migrations, repositories, sqlite-vec/FTS5
-  LoreProviders/         // OllamaProvider (+ future providers)
-  LoreIngestion/         // PDF/Web/Text extractors, Chunker, MetadataExtractor
-  LoreRAG/               // Embedder, HybridSearch (RRF), PromptBuilder
-  LoreDesignSystem/      // Glass components, tints, spacing, symbols
-  LoreUI/                // SwiftUI features (Sidebar, Project, Chat, Setup)
+  LorePersistence/       // GRDB stack, migrations, repositories, VectorCodec/VectorSearch, FTS5
+  LoreProviders/         // Ollama, Apple Foundation Models, OpenAI-compatible; Ollama/Apple embeddings
+  LoreIngestion/         // PDF (+Vision OCR)/Web/Text extractors, Chunker, MetadataExtractor, manual finder
+  LoreRAG/               // RetrievalService (RRF), PromptBuilder
+  LoreDesignSystem/      // Glass components, tints, window effects
+  LoreUI/                // SwiftUI features, AppModel composition root, L() localization
+  lore-smoke/            // headless end-to-end smoke test executable
 ```
 
-- **MVVM** with `@Observable` view models.
+- The app target is generated from `project.yml` via **XcodeGen** (the
+  `.xcodeproj` is not committed).
+- **`@Observable` `AppModel`** is the `@MainActor` composition root wiring
+  providers, repositories, and services together.
 - **Repository pattern** over GRDB so UI never touches SQL.
 - Services are protocol-backed → mockable in previews and tests.
 
@@ -269,17 +336,18 @@ Packages/
 
 ## 12. Roadmap
 
-| Phase | Milestone | Outcome |
+| Phase | Milestone | Status |
 |---|---|---|
-| **M0** | Package skeleton + glass app shell | Modules compile; three-column glass layout; verifies Liquid Glass APIs against the real SDK. |
-| **M1** | Persistence + Projects CRUD | GRDB stack, first migration, create/rename/delete projects. |
-| **M2** | Provider layer + setup wizard | Detect Ollama, pull models w/ progress, health pill. |
-| **M3** | Ingestion (PDF/text/link) | Add docs → extract → chunk, with status + content-hash dedupe. |
-| **M4** | Embeddings + hybrid search | sqlite-vec + FTS5 + RRF fusion working. |
-| **M5** | Chat with RAG + citations | Dishwasher story end-to-end. |
-| **M6** | Metadata extraction (vendor/warranty) | "Is my warranty valid?" answered deterministically. |
-| **M7** | Hardening | Accessibility, errors, DnD, export/import, notarization + Sparkle. |
-| **Later** | docx/Office ingest, multiple providers, tools/actions, warranty reminders, iCloud-free sync options. | Extensions enabled by the abstractions above. |
+| **M0** | Package skeleton + glass app shell | ✅ Done — modules compile; three-column glass layout on the real SDK. |
+| **M1** | Persistence + Shelves CRUD | ✅ Done — GRDB stack, migrations, create/edit/delete shelves. |
+| **M2** | Provider layer + setup wizard | ✅ Done — Ollama detect/pull/health; **plus Apple Intelligence & external API providers**. |
+| **M3** | Ingestion (PDF/text/link) | ✅ Done — extract → chunk with status + content-hash dedupe; **+ Vision OCR fallback**. |
+| **M4** | Embeddings + hybrid search | ✅ Done — brute-force cosine + FTS5 + RRF (Apple or Ollama embeddings). |
+| **M5** | Chat with RAG + citations | ✅ Done — dishwasher story end-to-end; **+ chat memory, scope guardrail, on-request web fetch**. |
+| **M6** | Metadata extraction (vendor/warranty) | ✅ Done — auto + manual facts; deterministic warranty answers. |
+| **—** | Localization | ✅ Done — en/de/es/fr/sv UI, live switching. |
+| **M7** | Hardening | ◻︎ In progress — App Sandbox + entitlements, notarization, Sparkle auto-update; accessibility & export/import. |
+| **Later** | docx/Office ingest, more providers, tools/actions, warranty reminders, `sqlite-vec` at scale, sync options. | Enabled by the abstractions above. |
 
 ---
 
@@ -289,22 +357,27 @@ Packages/
 - ✅ **Default chat model** — RAM-adaptive; `llama3.2:3b` baseline (see §2).
 - ✅ **Scope** — long-lived product (not a throwaway hackathon build).
 
+- ✅ **Chat runtime** — Apple Intelligence is the zero-setup default; Ollama and an
+  external OpenAI-compatible API are both supported.
+- ✅ **Localization** — en/de/es/fr/sv UI, live-switchable.
+
 Still open:
 
-1. **Distribution** — Developer-ID + Sparkle as planned (recommended), or do you
-   want App Store as a hard requirement (changes the Ollama integration story)?
+1. **Distribution** — Developer-ID + Sparkle as planned (recommended), or App
+   Store as a hard requirement (changes the Ollama integration story)? Ties into
+   the M7 App Sandbox work.
 2. **Warranty behavior** — proactive expiry reminders eventually, or answer-when-
-   asked only? (v1 = answer when asked; reminders in "Later".)
-3. **Tooling** — Xcode 26 + Ollama not yet installed; installing in parallel.
-   Non-UI packages can be built/tested with the Swift toolchain meanwhile.
+   asked only? (Today = answer when asked; reminders in "Later".)
 
 ---
 
 ## 14. Risks
 
-- **Liquid Glass is new** — verify APIs against the installed SDK at M0.
-- **sqlite-vec packaging** — needs to be built/linked into the app; validated at M4
-  (fallback: brute-force cosine in SQL if the extension is problematic).
+- **Liquid Glass is new** — ✅ verified against the installed SDK.
+- **sqlite-vec packaging** — ✅ sidestepped for v1 by using brute-force cosine over
+  stored `Float32` BLOBs; revisit `sqlite-vec` only when corpus size demands it.
+- **Small context windows (Apple Intelligence)** — handled via compact retrieval +
+  a trimmed prompt with a hard character cap (see §5).
 - **Model performance varies by Mac** — wizard recommends sizes from detected RAM.
 - **Web extraction quality** — SwiftSoup readability is heuristic; acceptable for
   v1, improvable later.
