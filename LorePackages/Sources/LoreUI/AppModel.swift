@@ -41,7 +41,17 @@ public final class AppModel {
     public var showDocuments = false          // documents inspector, hidden by default
     public var isResponding = false
     public var errorMessage: String?
+    public var infoMessage: String?
     public var indexingDocumentIDs: Set<UUID> = []
+
+    // Update check
+    @ObservationIgnored private let updateChecker = UpdateChecker()
+    public var availableUpdate: ReleaseInfo?
+
+    /// The running app's version, e.g. "0.1.0".
+    public var currentVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+    }
 
     // Manual-fetch flow
     @ObservationIgnored let manualFinder = ManualFinderService()
@@ -180,6 +190,27 @@ public final class AppModel {
 
         // Only surface setup when something actually isn't ready.
         showSetup = !modelsReady
+
+        if settings.checkForUpdates { checkForUpdates(force: false) }
+    }
+
+    /// Check GitHub for a newer release. Best-effort: silent on failure, and on
+    /// a forced (manual) check with nothing newer, confirms "up to date". Set
+    /// `force` for a user-initiated check (ignores the auto-check preference).
+    public func checkForUpdates(force: Bool) {
+        guard force || settings.checkForUpdates else { return }
+        Task {
+            guard let latest = try? await updateChecker.latestRelease() else {
+                if force { infoMessage = L("Couldn't check for updates right now.") }
+                return
+            }
+            if UpdateChecker.isNewer(latest.version, than: currentVersion) {
+                availableUpdate = latest
+            } else {
+                availableUpdate = nil
+                if force { infoMessage = L("You're up to date.") }
+            }
+        }
     }
 
     public func refreshHealth() async {

@@ -179,3 +179,16 @@
 "information" = "información";
 "Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Buscando en la web %1$@ de «%2$@». Mostraré los resultados en un panel; elige los que quieras añadir a este estante.";
 "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "Solo puedo ayudarte con los documentos y productos de este estante. Pregúntame por tus productos o pídeme que busque un manual o las especificaciones técnicas de alguno.";
+
+/* Actualizaciones */
+"Software Update" = "Actualización de software";
+"You're up to date." = "Ya tienes la última versión.";
+"Couldn't check for updates right now." = "No se pudo buscar actualizaciones ahora mismo.";
+"Lore %@ is available." = "Lore %@ ya está disponible.";
+"Download update" = "Descargar actualización";
+"Dismiss" = "Descartar";
+"Check for Updates…" = "Buscar actualizaciones…";
+"Updates" = "Actualizaciones";
+"Check for updates automatically" = "Buscar actualizaciones automáticamente";
+"Current version" = "Versión actual";
+"Lore checks GitHub for new releases on launch. No personal data is sent." = "Lore busca nuevas versiones en GitHub al iniciarse. No se envían datos personales.";

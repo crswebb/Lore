@@ -167,6 +167,16 @@ private struct AdvancedSettingsTab: View {
                         .font(.caption).foregroundStyle(model.externalActive ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
                 }
             }
+
+            Section(L("Updates")) {
+                Toggle(L("Check for updates automatically"), isOn: $settings.checkForUpdates)
+                LabeledContent(L("Current version")) {
+                    Text(model.currentVersion).foregroundStyle(.secondary)
+                }
+                Button(L("Check for Updates…")) { model.checkForUpdates(force: true) }
+                Text(L("Lore checks GitHub for new releases on launch. No personal data is sent."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .onAppear { apiKeyDraft = model.settings.externalAPIKey }

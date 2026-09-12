@@ -66,8 +66,10 @@ provider. Your documents, embeddings, and search index never leave the machine.
 - **On‑device by default.** The model and embeddings run locally; the database and
   imported files live in `~/Library/Application Support/Lore/`.
 - **The only network egress** is (a) your local runtime (`localhost` Ollama),
-  (b) web links or manuals you explicitly add, and (c) an external chat provider
-  **only if you deliberately choose one** (shown with a persistent banner while active).
+  (b) web links or manuals you explicitly add, (c) an external chat provider
+  **only if you deliberately choose one** (shown with a persistent banner while
+  active), and (d) a version check against GitHub's public API on launch (sends
+  no user data; toggle it off in **Settings › Advanced › Updates**).
 - **Untrusted content stays data, never instructions.** Retrieved document and
   web text is delimited in the prompt and never treated as commands — a
   prompt‑injection defence that matters for RAG.
@@ -95,6 +97,12 @@ xattr -dr com.apple.quarantine /Applications/Lore.app
 
 > Only run that command on an app you trust and downloaded from this repo’s
 > Releases page — it removes the quarantine flag macOS uses to gate unsigned apps.
+
+**Staying up to date.** Lore checks GitHub for newer releases on launch and shows
+a banner when one is available, with a button to the download page (you re-run the
+newer DMG to update). Your shelves, chats, and settings are preserved across
+updates — they live in `~/Library/Application Support/Lore/`, outside the app.
+You can turn the check off in **Settings › Advanced › Updates**.
 
 Prefer to build it yourself? See [Getting started](#getting-started) below.
 

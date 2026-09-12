@@ -179,3 +179,16 @@
 "information" = "des informations";
 "Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Recherche sur le web de %1$@ pour « %2$@ ». Je montrerai les résultats dans un panneau — choisissez ceux à ajouter à cette étagère.";
 "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "Je ne peux vous aider qu'avec les documents et produits de cette étagère. Interrogez-moi sur vos produits, ou demandez-moi de récupérer un mode d'emploi ou les spécifications techniques de l'un d'eux.";
+
+/* Mises à jour */
+"Software Update" = "Mise à jour logicielle";
+"You're up to date." = "Vous êtes à jour.";
+"Couldn't check for updates right now." = "Impossible de rechercher des mises à jour pour le moment.";
+"Lore %@ is available." = "Lore %@ est disponible.";
+"Download update" = "Télécharger la mise à jour";
+"Dismiss" = "Ignorer";
+"Check for Updates…" = "Rechercher les mises à jour…";
+"Updates" = "Mises à jour";
+"Check for updates automatically" = "Rechercher les mises à jour automatiquement";
+"Current version" = "Version actuelle";
+"Lore checks GitHub for new releases on launch. No personal data is sent." = "Lore recherche de nouvelles versions sur GitHub au démarrage. Aucune donnée personnelle n'est envoyée.";

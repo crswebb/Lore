@@ -179,3 +179,16 @@
 "information" = "information";
 "Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Söker på webben efter %1$@ för ”%2$@”. Jag visar resultaten i en panel — välj vilka som helst att lägga till i den här hyllan.";
 "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "Jag kan bara hjälpa till med dokumenten och produkterna i den här hyllan. Fråga mig om dina produkter, eller be mig hämta en bruksanvisning eller tekniska specifikationer för någon av dem.";
+
+/* Uppdateringar */
+"Software Update" = "Programuppdatering";
+"You're up to date." = "Du har den senaste versionen.";
+"Couldn't check for updates right now." = "Det gick inte att söka efter uppdateringar just nu.";
+"Lore %@ is available." = "Lore %@ finns tillgänglig.";
+"Download update" = "Hämta uppdatering";
+"Dismiss" = "Avfärda";
+"Check for Updates…" = "Sök efter uppdateringar…";
+"Updates" = "Uppdateringar";
+"Check for updates automatically" = "Sök efter uppdateringar automatiskt";
+"Current version" = "Nuvarande version";
+"Lore checks GitHub for new releases on launch. No personal data is sent." = "Lore söker efter nya versioner på GitHub vid start. Inga personuppgifter skickas.";

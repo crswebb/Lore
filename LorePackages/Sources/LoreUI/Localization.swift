@@ -43,12 +43,13 @@ enum AppLanguage {
 
 /// Localized UI string from the selected language's Localizable.strings. Using
 /// the English text as the key, so a missing translation falls back to readable
-/// English. UI only — user content is never translated.
-func L(_ key: String) -> String {
+/// English. UI only — user content is never translated. `public` so the app
+/// target can localize its menu commands too.
+public func L(_ key: String) -> String {
     AppLanguage.bundle.localizedString(forKey: key, value: key, table: nil)
 }
 
 /// Localized string with `%@`-style arguments.
-func L(_ key: String, _ args: CVarArg...) -> String {
+public func L(_ key: String, _ args: CVarArg...) -> String {
     String(format: L(key), arguments: args)
 }

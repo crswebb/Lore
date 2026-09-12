@@ -5,6 +5,7 @@ import LoreDesignSystem
 /// right-hand inspector that's hidden by default (chatting > admin).
 public struct RootView: View {
     @Bindable var model: AppModel
+    @Environment(\.openURL) private var openURL
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     public init(model: AppModel) {
@@ -36,6 +37,11 @@ public struct RootView: View {
                     systemImage: "sparkles",
                     description: Text(L("Create a shelf to start collecting knowledge and asking questions."))
                 )
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            if let update = model.availableUpdate {
+                updateBanner(update)
             }
         }
         // Rebuild the split-view subtree when the UI language changes so every
@@ -73,6 +79,37 @@ public struct RootView: View {
         } message: {
             Text(model.errorMessage ?? "")
         }
+        .alert(
+            L("Software Update"),
+            isPresented: Binding(get: { model.infoMessage != nil }, set: { if !$0 { model.infoMessage = nil } })
+        ) {
+            Button(L("OK"), role: .cancel) { model.infoMessage = nil }
+        } message: {
+            Text(model.infoMessage ?? "")
+        }
+    }
+
+    /// Slim, dismissible bar shown when a newer release is on GitHub.
+    private func updateBanner(_ update: ReleaseInfo) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.down.circle.fill").foregroundStyle(LoreTheme.accent)
+            Text(L("Lore %@ is available.", update.version))
+                .font(.callout).fontWeight(.medium)
+            Spacer()
+            Button(L("Download update")) { openURL(update.url) }
+                .buttonStyle(.glassProminent)
+                .controlSize(.small)
+            Button {
+                model.availableUpdate = nil
+            } label: {
+                Image(systemName: "xmark").font(.caption)
+            }
+            .buttonStyle(.plain)
+            .help(L("Dismiss"))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial)
     }
 }
 

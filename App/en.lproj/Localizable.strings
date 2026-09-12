@@ -179,3 +179,16 @@
 "information" = "information";
 "Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf.";
 "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them.";
+
+/* Updates */
+"Software Update" = "Software Update";
+"You're up to date." = "You're up to date.";
+"Couldn't check for updates right now." = "Couldn't check for updates right now.";
+"Lore %@ is available." = "Lore %@ is available.";
+"Download update" = "Download update";
+"Dismiss" = "Dismiss";
+"Check for Updates…" = "Check for Updates…";
+"Updates" = "Updates";
+"Check for updates automatically" = "Check for updates automatically";
+"Current version" = "Current version";
+"Lore checks GitHub for new releases on launch. No personal data is sent." = "Lore checks GitHub for new releases on launch. No personal data is sent.";

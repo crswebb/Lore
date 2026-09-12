@@ -31,6 +31,12 @@ public final class SettingsStore {
         didSet { defaults.set(windowTranslucency, forKey: "windowTranslucency") }
     }
 
+    /// Whether Lore checks GitHub for a newer version on launch. The only
+    /// network call Lore makes on its own behalf; sends no user data.
+    public var checkForUpdates: Bool {
+        didSet { defaults.set(checkForUpdates, forKey: "checkForUpdates") }
+    }
+
     /// UI language: a `.lproj` code ("en", "de", …) or "" to follow the OS.
     /// Mirrored into `AppleLanguages` so cold launches and system panels match.
     public var appLanguage: String {
@@ -78,6 +84,7 @@ public final class SettingsStore {
         self.onboardingComplete = defaults.bool(forKey: "onboardingComplete")
         self.windowTranslucency = (defaults.object(forKey: "windowTranslucency") as? Double) ?? 0.25
         self.appLanguage = defaults.string(forKey: AppLanguage.key) ?? ""
+        self.checkForUpdates = (defaults.object(forKey: "checkForUpdates") as? Bool) ?? true
         self.externalBaseURLString = defaults.string(forKey: "externalBaseURL") ?? "https://api.openai.com/v1"
         self.externalChatModel = defaults.string(forKey: "externalChatModel") ?? "gpt-4o-mini"
         self.chatSourceChosen = defaults.bool(forKey: "chatSourceChosen")

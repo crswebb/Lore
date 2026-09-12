@@ -27,6 +27,10 @@ struct LoreApp: App {
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .appInfo) {
+                Button(L("Check for Updates…")) { model?.checkForUpdates(force: true) }
+                    .disabled(model == nil)
+            }
         }
 
         Settings {

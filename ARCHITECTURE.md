@@ -265,9 +265,11 @@ answers are never translated.
 - Data in `~/Library/Application Support/Lore/` (single SQLite DB + imported
   file copies / security-scoped bookmarks).
 - **No network egress** except (a) the `localhost` Ollama runtime, (b) web links
-  or manuals the user explicitly adds, and (c) an **external chat provider only if
-  the user deliberately selects one** — shown with a persistent banner while
-  active. Documents, embeddings, and the search index never leave the Mac.
+  or manuals the user explicitly adds, (c) an **external chat provider only if the
+  user deliberately selects one** — shown with a persistent banner while active,
+  and (d) an **update check** — an unauthenticated GET to the GitHub Releases API
+  on launch (`UpdateChecker`), sending no user data and toggleable in Settings.
+  Documents, embeddings, and the search index never leave the Mac.
 - **Prompt-injection defense (critical for RAG):** documents and fetched web
   pages are *untrusted data*, never instructions. Retrieved text goes in a clearly
   delimited block; the system prompt forbids treating it as commands. When tools
