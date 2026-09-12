@@ -60,7 +60,7 @@ struct SidebarView: View {
                 StatusPill(.neutral, "☁ External chat")
                     .help("Chat is sent to \(model.externalHost). Embeddings stay local.")
             } else if model.settings.chatSource == .apple {
-                StatusPill(.neutral, "Apple Intelligence")
+                StatusPill(model.appleAvailable ? .good : .warning, "Apple Intelligence")
                     .help("Chat runs on Apple's on-device model. Embeddings run locally via Ollama.")
             }
             Spacer()
