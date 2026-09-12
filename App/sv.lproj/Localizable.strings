@@ -1,0 +1,181 @@
+/* Lore — gränssnittstexter (Svenska). */
+
+/* Hyllor och sidofält */
+"Shelves" = "Hyllor";
+"New Shelf" = "Ny hylla";
+"Edit…" = "Redigera…";
+"Delete" = "Radera";
+"External chat" = "Extern chatt";
+"Chat is sent to %@. Embeddings stay local." = "Chatten skickas till %@. Embeddings stannar lokalt.";
+"Chat runs on Apple's on-device model. Embeddings run locally via Ollama." = "Chatten körs på Apples modell på enheten. Embeddings körs lokalt via Ollama.";
+"Chat and search both run fully on-device via Apple. No Ollama needed." = "Både chatt och sökning körs helt på enheten via Apple. Ollama behövs inte.";
+"Ollama ready" = "Ollama redo";
+"Models needed" = "Modeller behövs";
+"Ollama not running" = "Ollama körs inte";
+"Ollama not installed" = "Ollama är inte installerat";
+"Ollama error" = "Ollama-fel";
+
+/* Tomma tillstånd */
+"Explore your lore" = "Utforska din kunskap";
+"Create a shelf to start collecting knowledge and asking questions." = "Skapa en hylla för att börja samla kunskap och ställa frågor.";
+"No shelves yet" = "Inga hyllor än";
+"A shelf holds a topic's documents, links, and chats — like a shelf for your home or car." = "En hylla samlar ett ämnes dokument, länkar och chattar — som en hylla för ditt hem eller din bil.";
+"Create your first shelf" = "Skapa din första hylla";
+
+/* Manualfråga och varningar */
+"Look for the user manual?" = "Söka efter bruksanvisningen?";
+"Search online" = "Sök på nätet";
+"Not now" = "Inte nu";
+"Lore found “%@”. Want me to search the web for its user manual and add it to this shelf?" = "Lore hittade ”%@”. Vill du att jag söker på webben efter dess bruksanvisning och lägger till den i den här hyllan?";
+"Something went wrong" = "Något gick fel";
+"OK" = "OK";
+
+/* Chatt */
+"Summarize what's in this shelf." = "Sammanfatta vad som finns i den här hyllan.";
+"What should I do about error code F01?" = "Vad ska jag göra åt felkod F01?";
+"Is the warranty still valid?" = "Gäller garantin fortfarande?";
+"Ask your shelf" = "Fråga din hylla";
+"Answers are grounded in this shelf's documents, with citations." = "Svaren bygger på hyllans dokument, med källhänvisningar.";
+"Ask your shelf…" = "Fråga din hylla…";
+"Documents" = "Dokument";
+"Show or hide documents" = "Visa eller dölj dokument";
+"Chat" = "Chatt";
+"Chat is sent to %@ using %@. Your documents stay on this Mac." = "Chatten skickas till %1$@ med %2$@. Dina dokument stannar på den här Mac-datorn.";
+"Open Settings" = "Öppna inställningar";
+"Set up" = "Konfigurera";
+"Your external chat API isn't fully configured yet." = "Din externa chatt-API är inte helt konfigurerad ännu.";
+"Apple Intelligence isn't available yet — enable it in System Settings." = "Apple Intelligence är inte tillgängligt ännu — aktivera det i Systeminställningar.";
+"Local model isn't ready yet." = "Den lokala modellen är inte redo ännu.";
+"Ollama is needed for document search (embeddings)." = "Ollama behövs för dokumentsökning (embeddings).";
+"source" = "källa";
+"sources" = "källor";
+
+/* Dokumentstatus */
+"Pending" = "Väntar";
+"Reading…" = "Läser…";
+"Chunking…" = "Delar upp…";
+"Embedding…" = "Skapar embeddings…";
+"Ready" = "Klar";
+"Failed" = "Misslyckades";
+
+/* Hyllredigerare */
+"Edit Shelf" = "Redigera hylla";
+"Shelf name" = "Hyllnamn";
+"Icon" = "Symbol";
+"Color" = "Färg";
+"Cancel" = "Avbryt";
+"Save" = "Spara";
+"Create" = "Skapa";
+
+/* Lägg till länk */
+"Add a web link" = "Lägg till en webblänk";
+"Lore will fetch the page and index its text so you can ask about it." = "Lore hämtar sidan och indexerar dess text så att du kan fråga om den.";
+"Add" = "Lägg till";
+
+/* Metadata */
+"Facts about “%@”" = "Fakta om ”%@”";
+"Structured facts help Lore answer precisely — e.g. whether a warranty is still valid." = "Strukturerade fakta hjälper Lore att svara exakt — t.ex. om en garanti fortfarande gäller.";
+"key" = "nyckel";
+"value" = "värde";
+"Add fact" = "Lägg till fakta";
+"Custom…" = "Anpassad…";
+
+/* Chattlista */
+"Rename…" = "Byt namn…";
+"Rename Chat…" = "Byt namn på chatt…";
+"Delete Chat" = "Radera chatt";
+"New Chat" = "Ny chatt";
+"New chat (▾ for more)" = "Ny chatt (▾ för mer)";
+"Chats" = "Chattar";
+"Rename chat" = "Byt namn på chatt";
+"Chat name" = "Chattnamn";
+"Rename" = "Byt namn";
+
+/* Dokumentpanel */
+"Couldn't locate the file for “%@”." = "Kunde inte hitta filen för ”%@”.";
+"Add Files…" = "Lägg till filer…";
+"Add Link…" = "Lägg till länk…";
+"Open %@" = "Öppna %@";
+"Open" = "Öppna";
+"Edit facts…" = "Redigera fakta…";
+"Re-index" = "Indexera om";
+"No documents yet" = "Inga dokument än";
+"Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual." = "Dra filer hit, eller använd ＋ ovan. Lägg till ett kvitto så kan Lore erbjuda sig att hämta dess bruksanvisning.";
+"page" = "sida";
+"pages" = "sidor";
+
+/* Källvisare */
+"Loading source…" = "Läser in källa…";
+"Page %d" = "Sida %d";
+"Passage Lore used" = "Avsnitt som Lore använde";
+"(passage unavailable)" = "(avsnitt inte tillgängligt)";
+"Done" = "Klar";
+"Open PDF at page %d" = "Öppna PDF på sida %d";
+"Open PDF" = "Öppna PDF";
+"Open link" = "Öppna länk";
+"Open file" = "Öppna fil";
+
+/* Konfigurationsguide */
+"Set up your local AI" = "Konfigurera din lokala AI";
+"Lore runs entirely on your Mac using Ollama. Explore your lore — privately." = "Lore körs helt på din Mac med Ollama. Utforska din kunskap — privat.";
+"Ollama isn't installed" = "Ollama är inte installerat";
+"Ollama is a free app that runs AI models locally. Install it, then come back and check again." = "Ollama är en gratis app som kör AI-modeller lokalt. Installera den och kom tillbaka och kontrollera igen.";
+"Download Ollama" = "Ladda ner Ollama";
+"Or with Homebrew: `brew install ollama`" = "Eller med Homebrew: `brew install ollama`";
+"Ollama is installed but not running" = "Ollama är installerat men körs inte";
+"Start Ollama, then check again. From Terminal you can run:" = "Starta Ollama och kontrollera sedan igen. I Terminal kan du köra:";
+"Couldn't reach Ollama" = "Kunde inte nå Ollama";
+"Embedding model" = "Embedding-modell";
+"%@ · needed to search your documents" = "%@ · behövs för att söka i dina dokument";
+"Chat model" = "Chattmodell";
+"Download" = "Ladda ner";
+"Check again" = "Kontrollera igen";
+"Finish" = "Slutför";
+"Skip for now" = "Hoppa över för nu";
+"Starting…" = "Startar…";
+
+/* Manualresultat */
+"Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link." = "Välj de som ska läggas till i den här hyllan. PDF-filer laddas ner och sparas; sidor indexeras via sin länk.";
+"Searching the web…" = "Söker på webben…";
+"No manuals found" = "Inga bruksanvisningar hittades";
+"Try adding the manual link manually with Add Link in the documents panel." = "Prova att lägga till manuallänken manuellt med ”Lägg till länk” i dokumentpanelen.";
+"Added" = "Tillagd";
+
+/* Inställningar */
+"Language" = "Språk";
+"System" = "System";
+"Changes the language of Lore's interface. Your documents and answers are unaffected." = "Ändrar språket i Lores gränssnitt. Dina dokument och svar påverkas inte.";
+"Models" = "Modeller";
+"Appearance" = "Utseende";
+"Advanced" = "Avancerat";
+"Chat & embeddings" = "Chatt och embeddings";
+"Local runtime (Ollama)" = "Lokal körmiljö (Ollama)";
+"Server" = "Server";
+"Status" = "Status";
+"Check" = "Kontrollera";
+"Manage local models…" = "Hantera lokala modeller…";
+"Not running" = "Körs inte";
+"Not installed" = "Inte installerat";
+"Error" = "Fel";
+"Window" = "Fönster";
+"Background transparency" = "Bakgrundstransparens";
+"Let the desktop shine through for a glassier feel. Takes effect immediately." = "Låt skrivbordet skina igenom för en glasigare känsla. Träder i kraft direkt.";
+"Chat provider" = "Chattleverantör";
+"Chat runs on" = "Chatten körs på";
+"External" = "Extern";
+"Base URL" = "Bas-URL";
+"API key" = "API-nyckel";
+"Apply & reconnect" = "Tillämpa och återanslut";
+"Chat runs on a local Ollama model. Fully private and offline." = "Chatten körs på en lokal Ollama-modell. Helt privat och offline.";
+"Chat uses Apple's on-device model (Apple Intelligence). No download, fully private — requires a supported Mac with Apple Intelligence enabled." = "Chatten använder Apples modell på enheten (Apple Intelligence). Ingen nedladdning, helt privat — kräver en Mac som stöds med Apple Intelligence aktiverat.";
+"Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama)." = "Chatten skickas till din externa leverantör. Dina dokument och sökindex stannar på den här Mac-datorn (embeddings körs alltid lokalt via Ollama).";
+
+/* Webbhämtning (skapat i chatten) */
+"User manuals" = "Bruksanvisningar";
+"Technical specifications" = "Tekniska specifikationer";
+"Web results" = "Webbresultat";
+"a user manual" = "en bruksanvisning";
+"the technical specifications" = "de tekniska specifikationerna";
+"information" = "information";
+"Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Söker på webben efter %1$@ för ”%2$@”. Jag visar resultaten i en panel — välj vilka som helst att lägga till i den här hyllan.";
+"I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "Jag kan bara hjälpa till med dokumenten och produkterna i den här hyllan. Fråga mig om dina produkter, eller be mig hämta en bruksanvisning eller tekniska specifikationer för någon av dem.";

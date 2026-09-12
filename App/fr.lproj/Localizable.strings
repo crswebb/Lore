@@ -1,0 +1,181 @@
+/* Lore — textes de l'interface (Français). */
+
+/* Étagères et barre latérale */
+"Shelves" = "Étagères";
+"New Shelf" = "Nouvelle étagère";
+"Edit…" = "Modifier…";
+"Delete" = "Supprimer";
+"External chat" = "Chat externe";
+"Chat is sent to %@. Embeddings stay local." = "Le chat est envoyé à %@. Les embeddings restent locaux.";
+"Chat runs on Apple's on-device model. Embeddings run locally via Ollama." = "Le chat utilise le modèle sur appareil d'Apple. Les embeddings s'exécutent localement via Ollama.";
+"Chat and search both run fully on-device via Apple. No Ollama needed." = "Le chat et la recherche s'exécutent entièrement sur l'appareil via Apple. Ollama n'est pas nécessaire.";
+"Ollama ready" = "Ollama prêt";
+"Models needed" = "Modèles requis";
+"Ollama not running" = "Ollama n'est pas en cours d'exécution";
+"Ollama not installed" = "Ollama n'est pas installé";
+"Ollama error" = "Erreur Ollama";
+
+/* États vides */
+"Explore your lore" = "Explorez votre savoir";
+"Create a shelf to start collecting knowledge and asking questions." = "Créez une étagère pour commencer à rassembler des connaissances et poser des questions.";
+"No shelves yet" = "Aucune étagère pour l'instant";
+"A shelf holds a topic's documents, links, and chats — like a shelf for your home or car." = "Une étagère regroupe les documents, liens et discussions d'un sujet — comme une étagère pour votre maison ou votre voiture.";
+"Create your first shelf" = "Créez votre première étagère";
+
+/* Invite de manuel et alertes */
+"Look for the user manual?" = "Rechercher le mode d'emploi ?";
+"Search online" = "Rechercher en ligne";
+"Not now" = "Pas maintenant";
+"Lore found “%@”. Want me to search the web for its user manual and add it to this shelf?" = "Lore a trouvé « %@ ». Voulez-vous que je recherche son mode d'emploi sur le web et que je l'ajoute à cette étagère ?";
+"Something went wrong" = "Une erreur s'est produite";
+"OK" = "OK";
+
+/* Chat */
+"Summarize what's in this shelf." = "Résume le contenu de cette étagère.";
+"What should I do about error code F01?" = "Que dois-je faire pour le code d'erreur F01 ?";
+"Is the warranty still valid?" = "La garantie est-elle encore valable ?";
+"Ask your shelf" = "Interrogez votre étagère";
+"Answers are grounded in this shelf's documents, with citations." = "Les réponses s'appuient sur les documents de cette étagère, avec citations.";
+"Ask your shelf…" = "Interrogez votre étagère…";
+"Documents" = "Documents";
+"Show or hide documents" = "Afficher ou masquer les documents";
+"Chat" = "Chat";
+"Chat is sent to %@ using %@. Your documents stay on this Mac." = "Le chat est envoyé à %1$@ via %2$@. Vos documents restent sur ce Mac.";
+"Open Settings" = "Ouvrir les réglages";
+"Set up" = "Configurer";
+"Your external chat API isn't fully configured yet." = "Votre API de chat externe n'est pas encore entièrement configurée.";
+"Apple Intelligence isn't available yet — enable it in System Settings." = "Apple Intelligence n'est pas encore disponible — activez-le dans Réglages Système.";
+"Local model isn't ready yet." = "Le modèle local n'est pas encore prêt.";
+"Ollama is needed for document search (embeddings)." = "Ollama est nécessaire pour la recherche de documents (embeddings).";
+"source" = "source";
+"sources" = "sources";
+
+/* Statut des documents */
+"Pending" = "En attente";
+"Reading…" = "Lecture…";
+"Chunking…" = "Découpage…";
+"Embedding…" = "Embedding…";
+"Ready" = "Prêt";
+"Failed" = "Échec";
+
+/* Éditeur d'étagère */
+"Edit Shelf" = "Modifier l'étagère";
+"Shelf name" = "Nom de l'étagère";
+"Icon" = "Icône";
+"Color" = "Couleur";
+"Cancel" = "Annuler";
+"Save" = "Enregistrer";
+"Create" = "Créer";
+
+/* Ajouter un lien */
+"Add a web link" = "Ajouter un lien web";
+"Lore will fetch the page and index its text so you can ask about it." = "Lore récupérera la page et indexera son texte pour que vous puissiez l'interroger.";
+"Add" = "Ajouter";
+
+/* Métadonnées */
+"Facts about “%@”" = "Informations sur « %@ »";
+"Structured facts help Lore answer precisely — e.g. whether a warranty is still valid." = "Des informations structurées aident Lore à répondre précisément — p. ex. si une garantie est encore valable.";
+"key" = "clé";
+"value" = "valeur";
+"Add fact" = "Ajouter une information";
+"Custom…" = "Personnalisé…";
+
+/* Liste des chats */
+"Rename…" = "Renommer…";
+"Rename Chat…" = "Renommer le chat…";
+"Delete Chat" = "Supprimer le chat";
+"New Chat" = "Nouveau chat";
+"New chat (▾ for more)" = "Nouveau chat (▾ pour plus)";
+"Chats" = "Chats";
+"Rename chat" = "Renommer le chat";
+"Chat name" = "Nom du chat";
+"Rename" = "Renommer";
+
+/* Panneau des documents */
+"Couldn't locate the file for “%@”." = "Impossible de localiser le fichier de « %@ ».";
+"Add Files…" = "Ajouter des fichiers…";
+"Add Link…" = "Ajouter un lien…";
+"Open %@" = "Ouvrir %@";
+"Open" = "Ouvrir";
+"Edit facts…" = "Modifier les informations…";
+"Re-index" = "Réindexer";
+"No documents yet" = "Aucun document pour l'instant";
+"Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual." = "Glissez des fichiers ici, ou utilisez ＋ ci-dessus. Ajoutez un reçu et Lore pourra proposer de récupérer son mode d'emploi.";
+"page" = "page";
+"pages" = "pages";
+
+/* Visionneuse de source */
+"Loading source…" = "Chargement de la source…";
+"Page %d" = "Page %d";
+"Passage Lore used" = "Passage utilisé par Lore";
+"(passage unavailable)" = "(passage indisponible)";
+"Done" = "Terminé";
+"Open PDF at page %d" = "Ouvrir le PDF à la page %d";
+"Open PDF" = "Ouvrir le PDF";
+"Open link" = "Ouvrir le lien";
+"Open file" = "Ouvrir le fichier";
+
+/* Assistant de configuration */
+"Set up your local AI" = "Configurez votre IA locale";
+"Lore runs entirely on your Mac using Ollama. Explore your lore — privately." = "Lore fonctionne entièrement sur votre Mac avec Ollama. Explorez votre savoir — en toute confidentialité.";
+"Ollama isn't installed" = "Ollama n'est pas installé";
+"Ollama is a free app that runs AI models locally. Install it, then come back and check again." = "Ollama est une app gratuite qui exécute des modèles d'IA localement. Installez-la, puis revenez vérifier.";
+"Download Ollama" = "Télécharger Ollama";
+"Or with Homebrew: `brew install ollama`" = "Ou avec Homebrew : `brew install ollama`";
+"Ollama is installed but not running" = "Ollama est installé mais pas en cours d'exécution";
+"Start Ollama, then check again. From Terminal you can run:" = "Démarrez Ollama, puis vérifiez à nouveau. Depuis le Terminal, vous pouvez exécuter :";
+"Couldn't reach Ollama" = "Impossible de joindre Ollama";
+"Embedding model" = "Modèle d'embeddings";
+"%@ · needed to search your documents" = "%@ · nécessaire pour rechercher dans vos documents";
+"Chat model" = "Modèle de chat";
+"Download" = "Télécharger";
+"Check again" = "Vérifier à nouveau";
+"Finish" = "Terminer";
+"Skip for now" = "Ignorer pour l'instant";
+"Starting…" = "Démarrage…";
+
+/* Résultats des manuels */
+"Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link." = "Choisissez ceux à ajouter à cette étagère. Les PDF sont téléchargés et stockés ; les pages sont indexées par leur lien.";
+"Searching the web…" = "Recherche sur le web…";
+"No manuals found" = "Aucun mode d'emploi trouvé";
+"Try adding the manual link manually with Add Link in the documents panel." = "Essayez d'ajouter le lien du mode d'emploi manuellement avec « Ajouter un lien » dans le panneau des documents.";
+"Added" = "Ajouté";
+
+/* Réglages */
+"Language" = "Langue";
+"System" = "Système";
+"Changes the language of Lore's interface. Your documents and answers are unaffected." = "Change la langue de l'interface de Lore. Vos documents et réponses ne sont pas affectés.";
+"Models" = "Modèles";
+"Appearance" = "Apparence";
+"Advanced" = "Avancé";
+"Chat & embeddings" = "Chat et embeddings";
+"Local runtime (Ollama)" = "Environnement local (Ollama)";
+"Server" = "Serveur";
+"Status" = "État";
+"Check" = "Vérifier";
+"Manage local models…" = "Gérer les modèles locaux…";
+"Not running" = "Pas en cours d'exécution";
+"Not installed" = "Non installé";
+"Error" = "Erreur";
+"Window" = "Fenêtre";
+"Background transparency" = "Transparence de l'arrière-plan";
+"Let the desktop shine through for a glassier feel. Takes effect immediately." = "Laissez le bureau transparaître pour un rendu plus vitré. Prend effet immédiatement.";
+"Chat provider" = "Fournisseur de chat";
+"Chat runs on" = "Le chat s'exécute sur";
+"External" = "Externe";
+"Base URL" = "URL de base";
+"API key" = "Clé d'API";
+"Apply & reconnect" = "Appliquer et reconnecter";
+"Chat runs on a local Ollama model. Fully private and offline." = "Le chat utilise un modèle Ollama local. Entièrement privé et hors ligne.";
+"Chat uses Apple's on-device model (Apple Intelligence). No download, fully private — requires a supported Mac with Apple Intelligence enabled." = "Le chat utilise le modèle sur appareil d'Apple (Apple Intelligence). Aucun téléchargement, entièrement privé — nécessite un Mac compatible avec Apple Intelligence activé.";
+"Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama)." = "Le chat est envoyé à votre fournisseur externe. Vos documents et l'index de recherche restent sur ce Mac (les embeddings s'exécutent toujours localement via Ollama).";
+
+/* Récupération web (généré dans le chat) */
+"User manuals" = "Modes d'emploi";
+"Technical specifications" = "Spécifications techniques";
+"Web results" = "Résultats web";
+"a user manual" = "un mode d'emploi";
+"the technical specifications" = "les spécifications techniques";
+"information" = "des informations";
+"Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Recherche sur le web de %1$@ pour « %2$@ ». Je montrerai les résultats dans un panneau — choisissez ceux à ajouter à cette étagère.";
+"I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "Je ne peux vous aider qu'avec les documents et produits de cette étagère. Interrogez-moi sur vos produits, ou demandez-moi de récupérer un mode d'emploi ou les spécifications techniques de l'un d'eux.";

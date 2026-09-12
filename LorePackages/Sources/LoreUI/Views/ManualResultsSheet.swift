@@ -15,17 +15,17 @@ struct ManualResultsSheet: View {
                 Text(model.webResultsHeading).font(.title2.bold())
                 Spacer()
             }
-            Text("Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link.")
+            Text(L("Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link."))
                 .font(.callout).foregroundStyle(.secondary)
 
             if model.manualSearching {
-                ProgressView("Searching the web…")
+                ProgressView(L("Searching the web…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if model.manualCandidates.isEmpty {
                 ContentUnavailableView(
-                    "No manuals found",
+                    L("No manuals found"),
                     systemImage: "magnifyingglass",
-                    description: Text("Try adding the manual link manually with Add Link in the documents panel.")
+                    description: Text(L("Try adding the manual link manually with Add Link in the documents panel."))
                 )
                 .frame(maxHeight: .infinity)
             } else {
@@ -40,10 +40,10 @@ struct ManualResultsSheet: View {
                         }
                         Spacer()
                         if model.addedManualURLs.contains(candidate.url) {
-                            Label("Added", systemImage: "checkmark.circle.fill")
+                            Label(L("Added"), systemImage: "checkmark.circle.fill")
                                 .labelStyle(.iconOnly).foregroundStyle(.green)
                         } else {
-                            Button("Add") { Task { await model.addManual(candidate) } }
+                            Button(L("Add")) { Task { await model.addManual(candidate) } }
                                 .buttonStyle(.glass)
                         }
                     }
@@ -53,7 +53,7 @@ struct ManualResultsSheet: View {
 
             HStack {
                 Spacer()
-                Button("Done") { dismiss() }.buttonStyle(.glassProminent)
+                Button(L("Done")) { dismiss() }.buttonStyle(.glassProminent)
             }
         }
         .padding(22)

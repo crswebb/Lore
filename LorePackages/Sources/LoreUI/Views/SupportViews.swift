@@ -15,12 +15,12 @@ func iconName(for kind: DocumentKind) -> String {
 
 func statusLabel(for status: DocumentStatus) -> String {
     switch status {
-    case .pending: return "Pending"
-    case .extracting: return "Reading…"
-    case .chunking: return "Chunking…"
-    case .embedding: return "Embedding…"
-    case .ready: return "Ready"
-    case .failed: return "Failed"
+    case .pending: return L("Pending")
+    case .extracting: return L("Reading…")
+    case .chunking: return L("Chunking…")
+    case .embedding: return L("Embedding…")
+    case .ready: return L("Ready")
+    case .failed: return L("Failed")
     }
 }
 
@@ -50,14 +50,14 @@ struct ProjectEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text(isEditing ? "Edit Shelf" : "New Shelf").font(.title2.bold())
+            Text(isEditing ? L("Edit Shelf") : L("New Shelf")).font(.title2.bold())
 
-            TextField("Shelf name", text: $name)
+            TextField(L("Shelf name"), text: $name)
                 .textFieldStyle(.roundedBorder)
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Icon").font(.headline)
+                Text(L("Icon")).font(.headline)
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 10) {
                     ForEach(icons, id: \.self) { symbol in
                         Image(systemName: symbol)
@@ -70,7 +70,7 @@ struct ProjectEditorSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Color").font(.headline)
+                Text(L("Color")).font(.headline)
                 HStack(spacing: 10) {
                     ForEach(LoreTheme.projectTints, id: \.self) { hex in
                         Circle()
@@ -86,8 +86,8 @@ struct ProjectEditorSheet: View {
 
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button(isEditing ? "Save" : "Create") { save() }
+                Button(L("Cancel")) { dismiss() }
+                Button(isEditing ? L("Save") : L("Create")) { save() }
                     .buttonStyle(.glassProminent)
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
@@ -124,8 +124,8 @@ struct AddLinkSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add a web link").font(.title2.bold())
-            Text("Lore will fetch the page and index its text so you can ask about it.")
+            Text(L("Add a web link")).font(.title2.bold())
+            Text(L("Lore will fetch the page and index its text so you can ask about it."))
                 .foregroundStyle(.secondary)
             TextField("https://example.com/manual", text: $urlString)
                 .textFieldStyle(.roundedBorder)
@@ -133,8 +133,8 @@ struct AddLinkSheet: View {
             Spacer()
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Add") {
+                Button(L("Cancel")) { dismiss() }
+                Button(L("Add")) {
                     if let url = normalizedURL(urlString) {
                         Task { await model.addWebLink(url); dismiss() }
                     }
@@ -171,16 +171,16 @@ struct MetadataSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Facts about “\(document.title)”").font(.title2.bold())
-            Text("Structured facts help Lore answer precisely — e.g. whether a warranty is still valid.")
+            Text(L("Facts about “%@”", document.title)).font(.title2.bold())
+            Text(L("Structured facts help Lore answer precisely — e.g. whether a warranty is still valid."))
                 .foregroundStyle(.secondary)
                 .font(.callout)
 
             List {
                 ForEach($pairs) { $pair in
                     HStack {
-                        TextField("key", text: $pair.key).frame(width: 140)
-                        TextField("value", text: $pair.value)
+                        TextField(L("key"), text: $pair.key).frame(width: 140)
+                        TextField(L("value"), text: $pair.value)
                         Button(role: .destructive) {
                             pairs.removeAll { $0.id == pair.id }
                         } label: { Image(systemName: "minus.circle") }
@@ -191,16 +191,16 @@ struct MetadataSheet: View {
             .frame(minHeight: 160)
 
             HStack {
-                Menu("Add fact") {
+                Menu(L("Add fact")) {
                     ForEach(suggestedKeys, id: \.self) { key in
                         Button(key) { pairs.append(Pair(key: key, value: "")) }
                     }
                     Divider()
-                    Button("Custom…") { pairs.append(Pair(key: "", value: "")) }
+                    Button(L("Custom…")) { pairs.append(Pair(key: "", value: "")) }
                 }
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") {
+                Button(L("Cancel")) { dismiss() }
+                Button(L("Save")) {
                     var dict: [String: String] = [:]
                     for pair in pairs where !pair.key.trimmingCharacters(in: .whitespaces).isEmpty {
                         dict[pair.key] = pair.value

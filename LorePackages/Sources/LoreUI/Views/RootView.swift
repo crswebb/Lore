@@ -32,12 +32,17 @@ public struct RootView: View {
                     }
             } else {
                 ContentUnavailableView(
-                    "Explore your lore",
+                    L("Explore your lore"),
                     systemImage: "sparkles",
-                    description: Text("Create a shelf to start collecting knowledge and asking questions.")
+                    description: Text(L("Create a shelf to start collecting knowledge and asking questions."))
                 )
             }
         }
+        // Rebuild the split-view subtree when the UI language changes so every
+        // label re-localizes live. AppModel state (selection, chats) is owned
+        // above and survives; only transient view state resets.
+        .id(model.settings.appLanguage)
+        .environment(\.locale, AppLanguage.locale(for: model.settings.appLanguage))
         .background(AdaptiveBackground(translucency: model.settings.windowTranslucency))
         .background(WindowConfigurator())
         .environment(model)
@@ -51,20 +56,20 @@ public struct RootView: View {
             ManualResultsSheet().environment(model)
         }
         .alert(
-            "Look for the user manual?",
+            L("Look for the user manual?"),
             isPresented: Binding(get: { model.manualPrompt != nil }, set: { if !$0 { model.manualPrompt = nil } }),
             presenting: model.manualPrompt
         ) { _ in
-            Button("Search online") { model.confirmManualSearch() }
-            Button("Not now", role: .cancel) { model.manualPrompt = nil }
+            Button(L("Search online")) { model.confirmManualSearch() }
+            Button(L("Not now"), role: .cancel) { model.manualPrompt = nil }
         } message: { prompt in
-            Text("Lore found “\(prompt.productLabel)”. Want me to search the web for its user manual and add it to this shelf?")
+            Text(L("Lore found “%@”. Want me to search the web for its user manual and add it to this shelf?", prompt.productLabel))
         }
         .alert(
-            "Something went wrong",
+            L("Something went wrong"),
             isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })
         ) {
-            Button("OK", role: .cancel) { model.errorMessage = nil }
+            Button(L("OK"), role: .cancel) { model.errorMessage = nil }
         } message: {
             Text(model.errorMessage ?? "")
         }
@@ -77,11 +82,11 @@ struct EmptyProjectsPlaceholder: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label("No shelves yet", systemImage: "folder.badge.plus")
+            Label(L("No shelves yet"), systemImage: "folder.badge.plus")
         } description: {
-            Text("A shelf holds a topic's documents, links, and chats — like a shelf for your home or car.")
+            Text(L("A shelf holds a topic's documents, links, and chats — like a shelf for your home or car."))
         } actions: {
-            Button("Create your first shelf") { showNewProject = true }
+            Button(L("Create your first shelf")) { showNewProject = true }
                 .buttonStyle(.glassProminent)
         }
         .sheet(isPresented: $showNewProject) {

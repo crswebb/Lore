@@ -62,24 +62,24 @@ struct DocumentsView: View {
             if let url = FileAccess.resolve(bookmark: document.fileBookmark, fallback: document.sourceURL)?.url {
                 pdfTarget = PDFTarget(url: url)
             } else {
-                model.errorMessage = "Couldn't locate the file for “\(document.title)”."
+                model.errorMessage = L("Couldn't locate the file for “%@”.", document.title)
             }
         case .text, .markdown:
             if let url = FileAccess.resolve(bookmark: document.fileBookmark, fallback: document.sourceURL)?.url {
                 NSWorkspace.shared.open(url)
             } else {
-                model.errorMessage = "Couldn't locate the file for “\(document.title)”."
+                model.errorMessage = L("Couldn't locate the file for “%@”.", document.title)
             }
         }
     }
 
     private var header: some View {
         HStack {
-            Text("Documents").font(.headline)
+            Text(L("Documents")).font(.headline)
             Spacer()
             Menu {
-                Button("Add Files…", systemImage: "doc.badge.plus") { showFileImporter = true }
-                Button("Add Link…", systemImage: "link.badge.plus") { showLinkSheet = true }
+                Button(L("Add Files…"), systemImage: "doc.badge.plus") { showFileImporter = true }
+                Button(L("Add Link…"), systemImage: "link.badge.plus") { showLinkSheet = true }
             } label: {
                 Image(systemName: "plus")
             }
@@ -106,13 +106,13 @@ struct DocumentsView: View {
                     }
                     .buttonStyle(.plain)
                     .pointerStyle(.link)
-                    .help("Open \(document.title)")
+                    .help(L("Open %@", document.title))
                     .contextMenu {
-                        Button("Open") { open(document) }
-                        Button("Edit facts…") { metadataDocument = document }
-                        Button("Re-index") { Task { await model.reindex(document) } }
+                        Button(L("Open")) { open(document) }
+                        Button(L("Edit facts…")) { metadataDocument = document }
+                        Button(L("Re-index")) { Task { await model.reindex(document) } }
                         Divider()
-                        Button("Delete", role: .destructive) {
+                        Button(L("Delete"), role: .destructive) {
                             Task { await model.deleteDocument(document.id) }
                         }
                     }
@@ -127,8 +127,8 @@ struct DocumentsView: View {
             Image(systemName: "tray.and.arrow.down")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
-            Text("No documents yet").font(.headline)
-            Text("Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual.")
+            Text(L("No documents yet")).font(.headline)
+            Text(L("Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual."))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -177,7 +177,7 @@ struct DocumentRow: View {
 
     private var subtitle: String {
         if document.status == .ready, let pages = document.pageCount {
-            return "\(pages) page\(pages == 1 ? "" : "s")"
+            return "\(pages) " + (pages == 1 ? L("page") : L("pages"))
         }
         return statusLabel(for: document.status)
     }

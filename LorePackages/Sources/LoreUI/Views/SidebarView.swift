@@ -13,13 +13,13 @@ struct SidebarView: View {
             get: { model.selectedProjectID },
             set: { id in if let id { Task { await model.select(project: id) } } }
         )) {
-            Section("Shelves") {
+            Section(L("Shelves")) {
                 ForEach(model.projects) { project in
                     ProjectRow(project: project)
                         .tag(project.id)
                         .contextMenu {
-                            Button("Edit…") { editingProject = project }
-                            Button("Delete", role: .destructive) {
+                            Button(L("Edit…")) { editingProject = project }
+                            Button(L("Delete"), role: .destructive) {
                                 Task { await model.deleteProject(project.id) }
                             }
                         }
@@ -38,7 +38,7 @@ struct SidebarView: View {
                 Button {
                     showNewProject = true
                 } label: {
-                    Label("New Shelf", systemImage: "plus")
+                    Label(L("New Shelf"), systemImage: "plus")
                 }
             }
         }
@@ -59,13 +59,13 @@ struct SidebarView: View {
                 .buttonStyle(.plain)
             }
             if model.externalActive {
-                StatusPill(.neutral, "☁ External chat")
-                    .help("Chat is sent to \(model.externalHost). Embeddings stay local.")
+                StatusPill(.neutral, "☁ " + L("External chat"))
+                    .help(L("Chat is sent to %@. Embeddings stay local.", model.externalHost))
             } else if model.settings.chatSource == .apple {
                 StatusPill(model.appleAvailable ? .good : .warning, "Apple Intelligence")
                     .help(model.usesOllama
-                          ? "Chat runs on Apple's on-device model. Embeddings run locally via Ollama."
-                          : "Chat and search both run fully on-device via Apple. No Ollama needed.")
+                          ? L("Chat runs on Apple's on-device model. Embeddings run locally via Ollama.")
+                          : L("Chat and search both run fully on-device via Apple. No Ollama needed."))
             }
             Spacer()
         }
@@ -76,15 +76,15 @@ struct SidebarView: View {
         Group {
             switch model.health {
             case .ready where model.modelsReady:
-                StatusPill(.good, "Ollama ready")
+                StatusPill(.good, L("Ollama ready"))
             case .ready:
-                StatusPill(.warning, "Models needed")
+                StatusPill(.warning, L("Models needed"))
             case .installedNotRunning:
-                StatusPill(.warning, "Ollama not running")
+                StatusPill(.warning, L("Ollama not running"))
             case .notInstalled:
-                StatusPill(.bad, "Ollama not installed")
+                StatusPill(.bad, L("Ollama not installed"))
             case .error:
-                StatusPill(.bad, "Ollama error")
+                StatusPill(.bad, L("Ollama error"))
             }
         }
     }

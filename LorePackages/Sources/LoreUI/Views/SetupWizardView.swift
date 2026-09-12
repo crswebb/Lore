@@ -59,8 +59,8 @@ struct SetupWizardView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Set up your local AI").font(.largeTitle.bold())
-            Text("Lore runs entirely on your Mac using Ollama. Explore your lore — privately.")
+            Text(L("Set up your local AI")).font(.largeTitle.bold())
+            Text(L("Lore runs entirely on your Mac using Ollama. Explore your lore — privately."))
                 .foregroundStyle(.secondary)
         }
     }
@@ -70,14 +70,14 @@ struct SetupWizardView: View {
     private var installStep: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                Label("Ollama isn't installed", systemImage: "xmark.circle.fill")
+                Label(L("Ollama isn't installed"), systemImage: "xmark.circle.fill")
                     .font(.headline).foregroundStyle(.red)
-                Text("Ollama is a free app that runs AI models locally. Install it, then come back and check again.")
-                Button("Download Ollama") {
+                Text(L("Ollama is a free app that runs AI models locally. Install it, then come back and check again."))
+                Button(L("Download Ollama")) {
                     openURL(URL(string: "https://ollama.com/download")!)
                 }
                 .buttonStyle(.glassProminent)
-                Text("Or with Homebrew: `brew install ollama`")
+                Text(L("Or with Homebrew: `brew install ollama`"))
                     .font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
             .padding(18)
@@ -87,9 +87,9 @@ struct SetupWizardView: View {
     private var notRunningStep: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                Label("Ollama is installed but not running", systemImage: "pause.circle.fill")
+                Label(L("Ollama is installed but not running"), systemImage: "pause.circle.fill")
                     .font(.headline).foregroundStyle(.orange)
-                Text("Start Ollama, then check again. From Terminal you can run:")
+                Text(L("Start Ollama, then check again. From Terminal you can run:"))
                 Text("ollama serve")
                     .font(.system(.body, design: .monospaced))
                     .textSelection(.enabled)
@@ -103,7 +103,7 @@ struct SetupWizardView: View {
     private func errorStep(_ message: String) -> some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Couldn't reach Ollama", systemImage: "exclamationmark.triangle.fill")
+                Label(L("Couldn't reach Ollama"), systemImage: "exclamationmark.triangle.fill")
                     .font(.headline).foregroundStyle(.red)
                 Text(message).foregroundStyle(.secondary)
             }
@@ -114,15 +114,15 @@ struct SetupWizardView: View {
     private var modelsStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             modelCard(
-                title: "Embedding model",
-                subtitle: "\(model.settings.embeddingModel) · needed to search your documents",
+                title: L("Embedding model"),
+                subtitle: L("%@ · needed to search your documents", model.settings.embeddingModel),
                 ready: embeddingReady,
                 modelName: model.settings.embeddingModel
             )
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Chat model").font(.headline)
-                Picker("Chat model", selection: $selectedChatModel) {
+                Text(L("Chat model")).font(.headline)
+                Picker(L("Chat model"), selection: $selectedChatModel) {
                     ForEach(OllamaModelCatalog.chatModels, id: \.name) { m in
                         Text("\(m.label) · ~\(String(format: "%.1f", m.approxDownloadGB)) GB").tag(m.name)
                     }
@@ -160,12 +160,12 @@ struct SetupWizardView: View {
                 }
                 Spacer()
                 if ready {
-                    Label("Ready", systemImage: "checkmark.circle.fill")
+                    Label(L("Ready"), systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green).labelStyle(.iconOnly).font(.title2)
                 } else if pull?.model == modelName {
                     ProgressView().controlSize(.small)
                 } else {
-                    Button("Download") { startPull(modelName) }
+                    Button(L("Download")) { startPull(modelName) }
                         .buttonStyle(.glass)
                 }
             }
@@ -177,13 +177,13 @@ struct SetupWizardView: View {
 
     private var footer: some View {
         HStack {
-            Button("Check again") { Task { await model.refreshHealth() } }
+            Button(L("Check again")) { Task { await model.refreshHealth() } }
             Spacer()
             if allReady {
-                Button("Finish") { model.completeSetup() }
+                Button(L("Finish")) { model.completeSetup() }
                     .buttonStyle(.glassProminent)
             } else {
-                Button("Skip for now") { model.showSetup = false }
+                Button(L("Skip for now")) { model.showSetup = false }
                     .buttonStyle(.plain)
             }
         }
@@ -197,7 +197,7 @@ struct SetupWizardView: View {
     // MARK: Pull
 
     private func startPull(_ name: String) {
-        pull = PullState(model: name, fraction: 0, status: "Starting…")
+        pull = PullState(model: name, fraction: 0, status: L("Starting…"))
         Task {
             do {
                 for try await progress in model.setupService.pull(model: name) {

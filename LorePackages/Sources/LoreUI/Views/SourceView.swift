@@ -26,7 +26,7 @@ struct SourceView: View {
                 Spacer()
                 actions(details)
             } else {
-                ProgressView("Loading source…")
+                ProgressView(L("Loading source…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -48,7 +48,7 @@ struct SourceView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(details.document.title).font(.title2.bold())
                 if let page = citation.page {
-                    Text("Page \(page)").foregroundStyle(.secondary)
+                    Text(L("Page %d", page)).foregroundStyle(.secondary)
                 } else if let host = details.document.sourceURL?.host {
                     Text(host).foregroundStyle(.secondary)
                 }
@@ -59,10 +59,10 @@ struct SourceView: View {
 
     private func passage(_ details: AppModel.SourceDetails) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("Passage Lore used", systemImage: "quote.opening")
+            Label(L("Passage Lore used"), systemImage: "quote.opening")
                 .font(.headline).foregroundStyle(.secondary)
             ScrollView {
-                Text(details.passage.isEmpty ? "(passage unavailable)" : details.passage)
+                Text(details.passage.isEmpty ? L("(passage unavailable)") : details.passage)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
@@ -75,27 +75,27 @@ struct SourceView: View {
     private func actions(_ details: AppModel.SourceDetails) -> some View {
         HStack {
             Spacer()
-            Button("Done") { dismiss() }
+            Button(L("Done")) { dismiss() }
             switch details.document.kind {
             case .pdf:
                 Button {
                     showPDF = true
                 } label: {
-                    Label(citation.page.map { "Open PDF at page \($0)" } ?? "Open PDF", systemImage: "doc.richtext")
+                    Label(citation.page.map { L("Open PDF at page %d", $0) } ?? L("Open PDF"), systemImage: "doc.richtext")
                 }
                 .buttonStyle(.glassProminent)
             case .webLink:
                 if let url = details.document.sourceURL {
                     Button {
                         openURL(url)
-                    } label: { Label("Open link", systemImage: "safari") }
+                    } label: { Label(L("Open link"), systemImage: "safari") }
                         .buttonStyle(.glassProminent)
                 }
             case .text, .markdown:
                 if let url = resolvedURL(details.document) {
                     Button {
                         NSWorkspace.shared.open(url)
-                    } label: { Label("Open file", systemImage: "arrow.up.forward.app") }
+                    } label: { Label(L("Open file"), systemImage: "arrow.up.forward.app") }
                         .buttonStyle(.glassProminent)
                 }
             }
@@ -118,7 +118,7 @@ struct PDFViewerSheet: View {
             HStack {
                 Text(url.lastPathComponent).font(.headline)
                 Spacer()
-                Button("Done") { dismiss() }
+                Button(L("Done")) { dismiss() }
             }
             .padding(12)
             PDFKitView(url: url, page: page)

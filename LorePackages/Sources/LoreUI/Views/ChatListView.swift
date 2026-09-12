@@ -18,43 +18,43 @@ struct ChatListView: View {
                 ChatRow(chat: chat)
                     .tag(chat.id)
                     .contextMenu {
-                        Button("Rename…") { startRename(chat) }
-                        Button("Delete", role: .destructive) {
+                        Button(L("Rename…")) { startRename(chat) }
+                        Button(L("Delete"), role: .destructive) {
                             Task { await model.deleteChat(chat.id) }
                         }
                     }
             }
         }
         .scrollContentBackground(.hidden)
-        .navigationTitle("Chats")
+        .navigationTitle(L("Chats"))
         .toolbar {
             ToolbarItem {
                 Menu {
                     if let current = model.selectedChatID,
                        let chat = model.chats.first(where: { $0.id == current }) {
-                        Button("Rename Chat…") { startRename(chat) }
-                        Button("Delete Chat", role: .destructive) {
+                        Button(L("Rename Chat…")) { startRename(chat) }
+                        Button(L("Delete Chat"), role: .destructive) {
                             Task { await model.deleteChat(current) }
                         }
                     }
                 } label: {
-                    Label("New Chat", systemImage: "square.and.pencil")
+                    Label(L("New Chat"), systemImage: "square.and.pencil")
                 } primaryAction: {
                     Task { await model.newChat() }
                 }
-                .help("New chat (▾ for more)")
+                .help(L("New chat (▾ for more)"))
             }
         }
-        .alert("Rename chat", isPresented: Binding(
+        .alert(L("Rename chat"), isPresented: Binding(
             get: { renamingChat != nil },
             set: { if !$0 { renamingChat = nil } }
         )) {
-            TextField("Chat name", text: $renameText)
-            Button("Rename") {
+            TextField(L("Chat name"), text: $renameText)
+            Button(L("Rename")) {
                 if let chat = renamingChat { Task { await model.renameChat(chat.id, to: renameText) } }
                 renamingChat = nil
             }
-            Button("Cancel", role: .cancel) { renamingChat = nil }
+            Button(L("Cancel"), role: .cancel) { renamingChat = nil }
         }
     }
 

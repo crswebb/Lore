@@ -11,11 +11,13 @@ struct ChatView: View {
         LoreTheme.color(hex: model.selectedProject?.colorTint ?? "#4F8EF7")
     }
 
-    private let examples = [
-        "Summarize what's in this shelf.",
-        "What should I do about error code F01?",
-        "Is the warranty still valid?",
-    ]
+    private var examples: [String] {
+        [
+            L("Summarize what's in this shelf."),
+            L("What should I do about error code F01?"),
+            L("Is the warranty still valid?"),
+        ]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -70,9 +72,9 @@ struct ChatView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Ask your shelf")
+            Text(L("Ask your shelf"))
                 .font(.title2.bold())
-            Text("Answers are grounded in this shelf's documents, with citations.")
+            Text(L("Answers are grounded in this shelf's documents, with citations."))
                 .foregroundStyle(.secondary)
             ForEach(examples, id: \.self) { example in
                 Button {
@@ -98,7 +100,7 @@ struct ChatView: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            GrowingTextEditor(text: $draft, placeholder: "Ask your shelf…", onSubmit: send)
+            GrowingTextEditor(text: $draft, placeholder: L("Ask your shelf…"), onSubmit: send)
                 .padding(.leading, 16)
                 .padding(.vertical, 11)
 
@@ -142,21 +144,21 @@ struct ChatView: View {
             Button {
                 model.showDocuments.toggle()
             } label: {
-                Label("Documents", systemImage: "sidebar.right")
+                Label(L("Documents"), systemImage: "sidebar.right")
             }
-            .help("Show or hide documents")
+            .help(L("Show or hide documents"))
         }
     }
 
     private var currentChatTitle: String {
-        model.chats.first { $0.id == model.selectedChatID }?.title ?? "Chat"
+        model.chats.first { $0.id == model.selectedChatID }?.title ?? L("Chat")
     }
 
     /// Persistent privacy indicator: chat is being sent to an external service.
     private var externalBar: some View {
         HStack(spacing: 6) {
             Image(systemName: "cloud")
-            Text("Chat is sent to \(model.externalHost) using \(model.settings.externalChatModel). Your documents stay on this Mac.")
+            Text(L("Chat is sent to %@ using %@. Your documents stay on this Mac.", model.externalHost, model.settings.externalChatModel))
                 .lineLimit(2)
             Spacer()
         }
@@ -172,10 +174,10 @@ struct ChatView: View {
             Text(bannerMessage)
             Spacer()
             if bannerNeedsSettings {
-                SettingsLink { Text("Open Settings") }
+                SettingsLink { Text(L("Open Settings")) }
                     .buttonStyle(.glass)
             } else {
-                Button("Set up") { model.showSetup = true }
+                Button(L("Set up")) { model.showSetup = true }
                     .buttonStyle(.glass)
             }
         }
@@ -194,13 +196,13 @@ struct ChatView: View {
     private var bannerMessage: String {
         switch model.settings.chatSource {
         case .external where !model.settings.externalConfigured:
-            return "Your external chat API isn't fully configured yet."
+            return L("Your external chat API isn't fully configured yet.")
         case .apple where !model.appleAvailable:
-            return "Apple Intelligence isn't available yet — enable it in System Settings."
+            return L("Apple Intelligence isn't available yet — enable it in System Settings.")
         case .ollama:
-            return "Local model isn't ready yet."
+            return L("Local model isn't ready yet.")
         default:
-            return "Ollama is needed for document search (embeddings)."
+            return L("Ollama is needed for document search (embeddings).")
         }
     }
 }
@@ -247,7 +249,7 @@ struct MessageBubble: View {
                     Image(systemName: "chevron.right")
                         .rotationEffect(.degrees(showSources ? 90 : 0))
                         .font(.caption2)
-                    Text("\(count) source" + (count == 1 ? "" : "s"))
+                    Text("\(count) " + (count == 1 ? L("source") : L("sources")))
                         .font(.caption2)
                 }
                 .foregroundStyle(.secondary)

@@ -47,7 +47,7 @@ public final class AppModel {
     @ObservationIgnored let manualFinder = ManualFinderService()
     public var manualPrompt: ManualPrompt?
     public var showManualResults = false
-    public var webResultsHeading = "User manuals"
+    public var webResultsHeading = L("User manuals")
     public var manualSearching = false
     public var manualCandidates: [ManualCandidate] = []
     public var addedManualURLs: Set<URL> = []
@@ -407,7 +407,7 @@ public final class AppModel {
         guard let prompt = manualPrompt else { return }
         manualQuery = prompt.query
         manualPrompt = nil
-        webResultsHeading = "User manuals"
+        webResultsHeading = L("User manuals")
         manualCandidates = []
         addedManualURLs = []
         showManualResults = true
@@ -460,16 +460,16 @@ public final class AppModel {
         }
         var heading: String {
             switch self {
-            case .manual: return "User manuals"
-            case .specs: return "Technical specifications"
-            case .web: return "Web results"
+            case .manual: return L("User manuals")
+            case .specs: return L("Technical specifications")
+            case .web: return L("Web results")
             }
         }
         var ackNoun: String {
             switch self {
-            case .manual: return "a user manual"
-            case .specs: return "the technical specifications"
-            case .web: return "information"
+            case .manual: return L("a user manual")
+            case .specs: return L("the technical specifications")
+            case .web: return L("information")
             }
         }
     }
@@ -658,7 +658,7 @@ public final class AppModel {
             let query = intent.kind == .web ? product : "\(product) \(intent.kind.querySuffix)"
             let ack = Message(
                 chatID: chatID, role: .assistant,
-                text: "Searching the web for \(intent.kind.ackNoun) for “\(product)”. I'll show the results in a panel — pick any to add to this shelf."
+                text: L("Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf.", intent.kind.ackNoun, product)
             )
             messages.append(ack)
             try? await chatsRepo.add(ack)
@@ -676,7 +676,7 @@ public final class AppModel {
         if await scopeAllows(trimmed) == false {
             let decline = Message(
                 chatID: chatID, role: .assistant,
-                text: "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them."
+                text: L("I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them.")
             )
             messages.append(decline)
             try? await chatsRepo.add(decline)

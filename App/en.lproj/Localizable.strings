@@ -1,0 +1,181 @@
+/* Lore — UI strings (English). Keys are the English source text. */
+
+/* Sidebar & shelves */
+"Shelves" = "Shelves";
+"New Shelf" = "New Shelf";
+"Edit…" = "Edit…";
+"Delete" = "Delete";
+"External chat" = "External chat";
+"Chat is sent to %@. Embeddings stay local." = "Chat is sent to %@. Embeddings stay local.";
+"Chat runs on Apple's on-device model. Embeddings run locally via Ollama." = "Chat runs on Apple's on-device model. Embeddings run locally via Ollama.";
+"Chat and search both run fully on-device via Apple. No Ollama needed." = "Chat and search both run fully on-device via Apple. No Ollama needed.";
+"Ollama ready" = "Ollama ready";
+"Models needed" = "Models needed";
+"Ollama not running" = "Ollama not running";
+"Ollama not installed" = "Ollama not installed";
+"Ollama error" = "Ollama error";
+
+/* Empty states */
+"Explore your lore" = "Explore your lore";
+"Create a shelf to start collecting knowledge and asking questions." = "Create a shelf to start collecting knowledge and asking questions.";
+"No shelves yet" = "No shelves yet";
+"A shelf holds a topic's documents, links, and chats — like a shelf for your home or car." = "A shelf holds a topic's documents, links, and chats — like a shelf for your home or car.";
+"Create your first shelf" = "Create your first shelf";
+
+/* Manual prompt & alerts */
+"Look for the user manual?" = "Look for the user manual?";
+"Search online" = "Search online";
+"Not now" = "Not now";
+"Lore found “%@”. Want me to search the web for its user manual and add it to this shelf?" = "Lore found “%@”. Want me to search the web for its user manual and add it to this shelf?";
+"Something went wrong" = "Something went wrong";
+"OK" = "OK";
+
+/* Chat */
+"Summarize what's in this shelf." = "Summarize what's in this shelf.";
+"What should I do about error code F01?" = "What should I do about error code F01?";
+"Is the warranty still valid?" = "Is the warranty still valid?";
+"Ask your shelf" = "Ask your shelf";
+"Answers are grounded in this shelf's documents, with citations." = "Answers are grounded in this shelf's documents, with citations.";
+"Ask your shelf…" = "Ask your shelf…";
+"Documents" = "Documents";
+"Show or hide documents" = "Show or hide documents";
+"Chat" = "Chat";
+"Chat is sent to %@ using %@. Your documents stay on this Mac." = "Chat is sent to %@ using %@. Your documents stay on this Mac.";
+"Open Settings" = "Open Settings";
+"Set up" = "Set up";
+"Your external chat API isn't fully configured yet." = "Your external chat API isn't fully configured yet.";
+"Apple Intelligence isn't available yet — enable it in System Settings." = "Apple Intelligence isn't available yet — enable it in System Settings.";
+"Local model isn't ready yet." = "Local model isn't ready yet.";
+"Ollama is needed for document search (embeddings)." = "Ollama is needed for document search (embeddings).";
+"source" = "source";
+"sources" = "sources";
+
+/* Document status */
+"Pending" = "Pending";
+"Reading…" = "Reading…";
+"Chunking…" = "Chunking…";
+"Embedding…" = "Embedding…";
+"Ready" = "Ready";
+"Failed" = "Failed";
+
+/* Shelf editor */
+"Edit Shelf" = "Edit Shelf";
+"Shelf name" = "Shelf name";
+"Icon" = "Icon";
+"Color" = "Color";
+"Cancel" = "Cancel";
+"Save" = "Save";
+"Create" = "Create";
+
+/* Add link */
+"Add a web link" = "Add a web link";
+"Lore will fetch the page and index its text so you can ask about it." = "Lore will fetch the page and index its text so you can ask about it.";
+"Add" = "Add";
+
+/* Metadata */
+"Facts about “%@”" = "Facts about “%@”";
+"Structured facts help Lore answer precisely — e.g. whether a warranty is still valid." = "Structured facts help Lore answer precisely — e.g. whether a warranty is still valid.";
+"key" = "key";
+"value" = "value";
+"Add fact" = "Add fact";
+"Custom…" = "Custom…";
+
+/* Chat list */
+"Rename…" = "Rename…";
+"Rename Chat…" = "Rename Chat…";
+"Delete Chat" = "Delete Chat";
+"New Chat" = "New Chat";
+"New chat (▾ for more)" = "New chat (▾ for more)";
+"Chats" = "Chats";
+"Rename chat" = "Rename chat";
+"Chat name" = "Chat name";
+"Rename" = "Rename";
+
+/* Documents panel */
+"Couldn't locate the file for “%@”." = "Couldn't locate the file for “%@”.";
+"Add Files…" = "Add Files…";
+"Add Link…" = "Add Link…";
+"Open %@" = "Open %@";
+"Open" = "Open";
+"Edit facts…" = "Edit facts…";
+"Re-index" = "Re-index";
+"No documents yet" = "No documents yet";
+"Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual." = "Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual.";
+"page" = "page";
+"pages" = "pages";
+
+/* Source viewer */
+"Loading source…" = "Loading source…";
+"Page %d" = "Page %d";
+"Passage Lore used" = "Passage Lore used";
+"(passage unavailable)" = "(passage unavailable)";
+"Done" = "Done";
+"Open PDF at page %d" = "Open PDF at page %d";
+"Open PDF" = "Open PDF";
+"Open link" = "Open link";
+"Open file" = "Open file";
+
+/* Setup wizard */
+"Set up your local AI" = "Set up your local AI";
+"Lore runs entirely on your Mac using Ollama. Explore your lore — privately." = "Lore runs entirely on your Mac using Ollama. Explore your lore — privately.";
+"Ollama isn't installed" = "Ollama isn't installed";
+"Ollama is a free app that runs AI models locally. Install it, then come back and check again." = "Ollama is a free app that runs AI models locally. Install it, then come back and check again.";
+"Download Ollama" = "Download Ollama";
+"Or with Homebrew: `brew install ollama`" = "Or with Homebrew: `brew install ollama`";
+"Ollama is installed but not running" = "Ollama is installed but not running";
+"Start Ollama, then check again. From Terminal you can run:" = "Start Ollama, then check again. From Terminal you can run:";
+"Couldn't reach Ollama" = "Couldn't reach Ollama";
+"Embedding model" = "Embedding model";
+"%@ · needed to search your documents" = "%@ · needed to search your documents";
+"Chat model" = "Chat model";
+"Download" = "Download";
+"Check again" = "Check again";
+"Finish" = "Finish";
+"Skip for now" = "Skip for now";
+"Starting…" = "Starting…";
+
+/* Manual results */
+"Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link." = "Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link.";
+"Searching the web…" = "Searching the web…";
+"No manuals found" = "No manuals found";
+"Try adding the manual link manually with Add Link in the documents panel." = "Try adding the manual link manually with Add Link in the documents panel.";
+"Added" = "Added";
+
+/* Settings */
+"Language" = "Language";
+"System" = "System";
+"Changes the language of Lore's interface. Your documents and answers are unaffected." = "Changes the language of Lore's interface. Your documents and answers are unaffected.";
+"Models" = "Models";
+"Appearance" = "Appearance";
+"Advanced" = "Advanced";
+"Chat & embeddings" = "Chat & embeddings";
+"Local runtime (Ollama)" = "Local runtime (Ollama)";
+"Server" = "Server";
+"Status" = "Status";
+"Check" = "Check";
+"Manage local models…" = "Manage local models…";
+"Not running" = "Not running";
+"Not installed" = "Not installed";
+"Error" = "Error";
+"Window" = "Window";
+"Background transparency" = "Background transparency";
+"Let the desktop shine through for a glassier feel. Takes effect immediately." = "Let the desktop shine through for a glassier feel. Takes effect immediately.";
+"Chat provider" = "Chat provider";
+"Chat runs on" = "Chat runs on";
+"External" = "External";
+"Base URL" = "Base URL";
+"API key" = "API key";
+"Apply & reconnect" = "Apply & reconnect";
+"Chat runs on a local Ollama model. Fully private and offline." = "Chat runs on a local Ollama model. Fully private and offline.";
+"Chat uses Apple's on-device model (Apple Intelligence). No download, fully private — requires a supported Mac with Apple Intelligence enabled." = "Chat uses Apple's on-device model (Apple Intelligence). No download, fully private — requires a supported Mac with Apple Intelligence enabled.";
+"Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama)." = "Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama).";
+
+/* Web fetch (chat-authored) */
+"User manuals" = "User manuals";
+"Technical specifications" = "Technical specifications";
+"Web results" = "Web results";
+"a user manual" = "a user manual";
+"the technical specifications" = "the technical specifications";
+"information" = "information";
+"Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf.";
+"I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them.";

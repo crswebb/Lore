@@ -1,0 +1,181 @@
+/* Lore — textos de la interfaz (Español). */
+
+/* Estantes y barra lateral */
+"Shelves" = "Estantes";
+"New Shelf" = "Nuevo estante";
+"Edit…" = "Editar…";
+"Delete" = "Eliminar";
+"External chat" = "Chat externo";
+"Chat is sent to %@. Embeddings stay local." = "El chat se envía a %@. Los embeddings permanecen locales.";
+"Chat runs on Apple's on-device model. Embeddings run locally via Ollama." = "El chat funciona con el modelo local de Apple. Los embeddings se ejecutan localmente con Ollama.";
+"Chat and search both run fully on-device via Apple. No Ollama needed." = "El chat y la búsqueda se ejecutan totalmente en el dispositivo con Apple. No se necesita Ollama.";
+"Ollama ready" = "Ollama listo";
+"Models needed" = "Faltan modelos";
+"Ollama not running" = "Ollama no está en ejecución";
+"Ollama not installed" = "Ollama no está instalado";
+"Ollama error" = "Error de Ollama";
+
+/* Estados vacíos */
+"Explore your lore" = "Explora tu saber";
+"Create a shelf to start collecting knowledge and asking questions." = "Crea un estante para empezar a reunir conocimiento y hacer preguntas.";
+"No shelves yet" = "Aún no hay estantes";
+"A shelf holds a topic's documents, links, and chats — like a shelf for your home or car." = "Un estante reúne los documentos, enlaces y chats de un tema, como un estante para tu hogar o tu coche.";
+"Create your first shelf" = "Crea tu primer estante";
+
+/* Aviso de manual y alertas */
+"Look for the user manual?" = "¿Buscar el manual de usuario?";
+"Search online" = "Buscar en línea";
+"Not now" = "Ahora no";
+"Lore found “%@”. Want me to search the web for its user manual and add it to this shelf?" = "Lore encontró «%@». ¿Quieres que busque su manual de usuario en la web y lo añada a este estante?";
+"Something went wrong" = "Algo salió mal";
+"OK" = "Aceptar";
+
+/* Chat */
+"Summarize what's in this shelf." = "Resume lo que hay en este estante.";
+"What should I do about error code F01?" = "¿Qué debo hacer con el código de error F01?";
+"Is the warranty still valid?" = "¿La garantía sigue vigente?";
+"Ask your shelf" = "Pregunta a tu estante";
+"Answers are grounded in this shelf's documents, with citations." = "Las respuestas se basan en los documentos de este estante, con citas.";
+"Ask your shelf…" = "Pregunta a tu estante…";
+"Documents" = "Documentos";
+"Show or hide documents" = "Mostrar u ocultar documentos";
+"Chat" = "Chat";
+"Chat is sent to %@ using %@. Your documents stay on this Mac." = "El chat se envía a %1$@ usando %2$@. Tus documentos permanecen en este Mac.";
+"Open Settings" = "Abrir ajustes";
+"Set up" = "Configurar";
+"Your external chat API isn't fully configured yet." = "Tu API de chat externa aún no está configurada por completo.";
+"Apple Intelligence isn't available yet — enable it in System Settings." = "Apple Intelligence aún no está disponible: actívalo en Ajustes del Sistema.";
+"Local model isn't ready yet." = "El modelo local aún no está listo.";
+"Ollama is needed for document search (embeddings)." = "Se necesita Ollama para la búsqueda de documentos (embeddings).";
+"source" = "fuente";
+"sources" = "fuentes";
+
+/* Estado de documentos */
+"Pending" = "Pendiente";
+"Reading…" = "Leyendo…";
+"Chunking…" = "Fragmentando…";
+"Embedding…" = "Generando embeddings…";
+"Ready" = "Listo";
+"Failed" = "Falló";
+
+/* Editor de estante */
+"Edit Shelf" = "Editar estante";
+"Shelf name" = "Nombre del estante";
+"Icon" = "Icono";
+"Color" = "Color";
+"Cancel" = "Cancelar";
+"Save" = "Guardar";
+"Create" = "Crear";
+
+/* Añadir enlace */
+"Add a web link" = "Añadir un enlace web";
+"Lore will fetch the page and index its text so you can ask about it." = "Lore obtendrá la página e indexará su texto para que puedas preguntar sobre ella.";
+"Add" = "Añadir";
+
+/* Metadatos */
+"Facts about “%@”" = "Datos sobre «%@»";
+"Structured facts help Lore answer precisely — e.g. whether a warranty is still valid." = "Los datos estructurados ayudan a Lore a responder con precisión, p. ej., si una garantía sigue vigente.";
+"key" = "clave";
+"value" = "valor";
+"Add fact" = "Añadir dato";
+"Custom…" = "Personalizado…";
+
+/* Lista de chats */
+"Rename…" = "Renombrar…";
+"Rename Chat…" = "Renombrar chat…";
+"Delete Chat" = "Eliminar chat";
+"New Chat" = "Nuevo chat";
+"New chat (▾ for more)" = "Nuevo chat (▾ para más)";
+"Chats" = "Chats";
+"Rename chat" = "Renombrar chat";
+"Chat name" = "Nombre del chat";
+"Rename" = "Renombrar";
+
+/* Panel de documentos */
+"Couldn't locate the file for “%@”." = "No se pudo localizar el archivo de «%@».";
+"Add Files…" = "Añadir archivos…";
+"Add Link…" = "Añadir enlace…";
+"Open %@" = "Abrir %@";
+"Open" = "Abrir";
+"Edit facts…" = "Editar datos…";
+"Re-index" = "Reindexar";
+"No documents yet" = "Aún no hay documentos";
+"Drag files here, or use ＋ above. Add a receipt and Lore can offer to fetch its manual." = "Arrastra archivos aquí o usa ＋ arriba. Añade un recibo y Lore podrá ofrecerte buscar su manual.";
+"page" = "página";
+"pages" = "páginas";
+
+/* Visor de fuentes */
+"Loading source…" = "Cargando fuente…";
+"Page %d" = "Página %d";
+"Passage Lore used" = "Pasaje que usó Lore";
+"(passage unavailable)" = "(pasaje no disponible)";
+"Done" = "Hecho";
+"Open PDF at page %d" = "Abrir PDF en la página %d";
+"Open PDF" = "Abrir PDF";
+"Open link" = "Abrir enlace";
+"Open file" = "Abrir archivo";
+
+/* Asistente de configuración */
+"Set up your local AI" = "Configura tu IA local";
+"Lore runs entirely on your Mac using Ollama. Explore your lore — privately." = "Lore funciona por completo en tu Mac con Ollama. Explora tu saber, en privado.";
+"Ollama isn't installed" = "Ollama no está instalado";
+"Ollama is a free app that runs AI models locally. Install it, then come back and check again." = "Ollama es una app gratuita que ejecuta modelos de IA localmente. Instálala y vuelve a comprobarlo.";
+"Download Ollama" = "Descargar Ollama";
+"Or with Homebrew: `brew install ollama`" = "O con Homebrew: `brew install ollama`";
+"Ollama is installed but not running" = "Ollama está instalado pero no en ejecución";
+"Start Ollama, then check again. From Terminal you can run:" = "Inicia Ollama y vuelve a comprobarlo. Desde el Terminal puedes ejecutar:";
+"Couldn't reach Ollama" = "No se pudo conectar con Ollama";
+"Embedding model" = "Modelo de embeddings";
+"%@ · needed to search your documents" = "%@ · necesario para buscar en tus documentos";
+"Chat model" = "Modelo de chat";
+"Download" = "Descargar";
+"Check again" = "Comprobar de nuevo";
+"Finish" = "Finalizar";
+"Skip for now" = "Omitir por ahora";
+"Starting…" = "Iniciando…";
+
+/* Resultados de manuales */
+"Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link." = "Elige los que añadir a este estante. Los PDF se descargan y guardan; las páginas se indexan por su enlace.";
+"Searching the web…" = "Buscando en la web…";
+"No manuals found" = "No se encontraron manuales";
+"Try adding the manual link manually with Add Link in the documents panel." = "Prueba a añadir el enlace del manual manualmente con «Añadir enlace» en el panel de documentos.";
+"Added" = "Añadido";
+
+/* Ajustes */
+"Language" = "Idioma";
+"System" = "Sistema";
+"Changes the language of Lore's interface. Your documents and answers are unaffected." = "Cambia el idioma de la interfaz de Lore. Tus documentos y respuestas no se ven afectados.";
+"Models" = "Modelos";
+"Appearance" = "Apariencia";
+"Advanced" = "Avanzado";
+"Chat & embeddings" = "Chat y embeddings";
+"Local runtime (Ollama)" = "Entorno local (Ollama)";
+"Server" = "Servidor";
+"Status" = "Estado";
+"Check" = "Comprobar";
+"Manage local models…" = "Gestionar modelos locales…";
+"Not running" = "No está en ejecución";
+"Not installed" = "No instalado";
+"Error" = "Error";
+"Window" = "Ventana";
+"Background transparency" = "Transparencia del fondo";
+"Let the desktop shine through for a glassier feel. Takes effect immediately." = "Deja que el escritorio se transparente para un aspecto más cristalino. Se aplica de inmediato.";
+"Chat provider" = "Proveedor de chat";
+"Chat runs on" = "El chat funciona con";
+"External" = "Externo";
+"Base URL" = "URL base";
+"API key" = "Clave de API";
+"Apply & reconnect" = "Aplicar y reconectar";
+"Chat runs on a local Ollama model. Fully private and offline." = "El chat funciona con un modelo local de Ollama. Totalmente privado y sin conexión.";
+"Chat uses Apple's on-device model (Apple Intelligence). No download, fully private — requires a supported Mac with Apple Intelligence enabled." = "El chat usa el modelo en el dispositivo de Apple (Apple Intelligence). Sin descargas, totalmente privado: requiere un Mac compatible con Apple Intelligence activado.";
+"Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama)." = "El chat se envía a tu proveedor externo. Tus documentos y el índice de búsqueda permanecen en este Mac (los embeddings siempre se ejecutan localmente con Ollama).";
+
+/* Búsqueda web (generado en el chat) */
+"User manuals" = "Manuales de usuario";
+"Technical specifications" = "Especificaciones técnicas";
+"Web results" = "Resultados web";
+"a user manual" = "un manual de usuario";
+"the technical specifications" = "las especificaciones técnicas";
+"information" = "información";
+"Searching the web for %@ for “%@”. I'll show the results in a panel — pick any to add to this shelf." = "Buscando en la web %1$@ de «%2$@». Mostraré los resultados en un panel; elige los que quieras añadir a este estante.";
+"I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them." = "Solo puedo ayudarte con los documentos y productos de este estante. Pregúntame por tus productos o pídeme que busque un manual o las especificaciones técnicas de alguno.";

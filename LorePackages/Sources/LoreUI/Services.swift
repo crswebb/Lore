@@ -31,6 +31,19 @@ public final class SettingsStore {
         didSet { defaults.set(windowTranslucency, forKey: "windowTranslucency") }
     }
 
+    /// UI language: a `.lproj` code ("en", "de", …) or "" to follow the OS.
+    /// Mirrored into `AppleLanguages` so cold launches and system panels match.
+    public var appLanguage: String {
+        didSet {
+            defaults.set(appLanguage, forKey: AppLanguage.key)
+            if appLanguage.isEmpty || appLanguage == "system" {
+                defaults.removeObject(forKey: "AppleLanguages")
+            } else {
+                defaults.set([appLanguage], forKey: "AppleLanguages")
+            }
+        }
+    }
+
     /// Where chat generation runs. Embeddings always run locally via Ollama.
     public enum ChatSource: String, CaseIterable, Sendable {
         case ollama    // local Ollama model
@@ -64,6 +77,7 @@ public final class SettingsStore {
         self.ollamaBaseURLString = defaults.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
         self.onboardingComplete = defaults.bool(forKey: "onboardingComplete")
         self.windowTranslucency = (defaults.object(forKey: "windowTranslucency") as? Double) ?? 0.25
+        self.appLanguage = defaults.string(forKey: AppLanguage.key) ?? ""
         self.externalBaseURLString = defaults.string(forKey: "externalBaseURL") ?? "https://api.openai.com/v1"
         self.externalChatModel = defaults.string(forKey: "externalChatModel") ?? "gpt-4o-mini"
         self.chatSourceChosen = defaults.bool(forKey: "chatSourceChosen")
