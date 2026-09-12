@@ -2,86 +2,58 @@ import SwiftUI
 import LoreProviders
 import LoreDesignSystem
 
-/// Settings window (⌘,). Keeps model choice out of the main UI but easy to reach.
+/// Settings window (⌘,), organized into tabs so each area stays focused.
 public struct SettingsView: View {
     @Bindable var model: AppModel
-    @State private var apiKeyDraft = ""
 
     public init(model: AppModel) {
         self.model = model
     }
 
     public var body: some View {
-        @Bindable var settings = model.settings
+        TabView {
+            ModelsSettingsTab(model: model)
+                .tabItem { Label("Models", systemImage: "cpu") }
+            AppearanceSettingsTab(model: model)
+                .tabItem { Label("Appearance", systemImage: "paintbrush") }
+            AdvancedSettingsTab(model: model)
+                .tabItem { Label("Advanced", systemImage: "gearshape.2") }
+        }
+        .frame(width: 500, height: 400)
+    }
+}
 
+// MARK: - Models
+
+private struct ModelsSettingsTab: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        @Bindable var settings = model.settings
         Form {
-            Section("Local AI") {
+            Section("Chat & embeddings") {
                 Picker("Chat model", selection: $settings.chatModel) {
                     ForEach(chatModelOptions, id: \.self) { name in
                         Text(label(for: name)).tag(name)
                     }
                 }
-
                 LabeledContent("Embedding model") {
                     Text(settings.embeddingModel).foregroundStyle(.secondary)
                 }
+            }
 
-                TextField("Ollama server", text: $settings.ollamaBaseURLString)
-
+            Section("Local runtime (Ollama)") {
+                TextField("Server", text: $settings.ollamaBaseURLString)
                 LabeledContent("Status") {
                     HStack {
                         healthText
                         Button("Check") { Task { await model.refreshHealth() } }
                     }
                 }
-            }
-
-            Section("Appearance") {
-                VStack(alignment: .leading, spacing: 4) {
-                    Slider(value: $settings.windowTranslucency, in: 0...1) {
-                        Text("Background transparency")
-                    } minimumValueLabel: {
-                        Image(systemName: "square.fill")
-                    } maximumValueLabel: {
-                        Image(systemName: "square.dashed")
-                    }
-                    Text("Let the desktop shine through for a glassier feel. Takes effect immediately.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Advanced — External chat API") {
-                Toggle("Use an external API for chat", isOn: $settings.useExternalAPI)
-                if settings.useExternalAPI {
-                    TextField("Base URL", text: $settings.externalBaseURLString, prompt: Text("https://api.openai.com/v1"))
-                    SecureField("API key", text: $apiKeyDraft)
-                    TextField("Chat model", text: $settings.externalChatModel, prompt: Text("gpt-4o-mini"))
-                    Button("Apply & reconnect") {
-                        settings.externalAPIKey = apiKeyDraft
-                        model.reconfigureProviders()
-                        Task { await model.refreshHealth() }
-                    }
-                    Text("Any OpenAI-compatible endpoint (OpenAI, OpenRouter, a remote Ollama’s /v1, …). Embeddings still run locally via Ollama, so your documents stay private and the search index stays consistent.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
-
-            Section {
                 Button("Manage local models…") { model.showSetup = true }
-                Text("Download or switch models, and verify the local runtime.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-
-            Section {
-                Text(settings.useExternalAPI
-                     ? "Chat uses your external API; embeddings run locally. Explore your lore."
-                     : "Everything runs locally on your Mac. Explore your lore.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 520)
-        .onAppear { apiKeyDraft = model.settings.externalAPIKey }
     }
 
     private var chatModelOptions: [String] {
@@ -108,5 +80,74 @@ public struct SettingsView: View {
         case .notInstalled: Text("Not installed").foregroundStyle(.red)
         case .error: Text("Error").foregroundStyle(.red)
         }
+    }
+}
+
+// MARK: - Appearance
+
+private struct AppearanceSettingsTab: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        @Bindable var settings = model.settings
+        Form {
+            Section("Window") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Slider(value: $settings.windowTranslucency, in: 0...1) {
+                        Text("Background transparency")
+                    } minimumValueLabel: {
+                        Image(systemName: "square.fill")
+                    } maximumValueLabel: {
+                        Image(systemName: "square.dashed")
+                    }
+                    Text("Let the desktop shine through for a glassier feel. Takes effect immediately.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Advanced
+
+private struct AdvancedSettingsTab: View {
+    @Bindable var model: AppModel
+    @State private var apiKeyDraft = ""
+
+    var body: some View {
+        @Bindable var settings = model.settings
+        Form {
+            Section("External chat API") {
+                Toggle("Use an external API for chat", isOn: $settings.useExternalAPI)
+                if settings.useExternalAPI {
+                    TextField("Base URL", text: $settings.externalBaseURLString, prompt: Text("https://api.openai.com/v1"))
+                    SecureField("API key", text: $apiKeyDraft)
+                    TextField("Chat model", text: $settings.externalChatModel, prompt: Text("gpt-4o-mini"))
+                    Button("Apply & reconnect") {
+                        settings.externalAPIKey = apiKeyDraft
+                        model.reconfigureProviders()
+                        Task { await model.refreshHealth() }
+                    }
+                }
+            }
+
+            if settings.useExternalAPI {
+                Section {
+                    Label(
+                        "Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama).",
+                        systemImage: "cloud"
+                    )
+                    .font(.caption).foregroundStyle(.secondary)
+                }
+            } else {
+                Section {
+                    Text("Off by default — everything runs locally on your Mac. Turn this on to use OpenAI, OpenRouter, a remote Ollama, or any OpenAI-compatible endpoint for chat.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear { apiKeyDraft = model.settings.externalAPIKey }
     }
 }
