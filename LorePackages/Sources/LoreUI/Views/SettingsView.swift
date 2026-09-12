@@ -155,6 +155,7 @@ private struct AdvancedSettingsTab: View {
         .formStyle(.grouped)
         .onAppear { apiKeyDraft = model.settings.externalAPIKey }
         .onChange(of: settings.chatSource) {
+            settings.chatSourceChosen = true
             model.reconfigureProviders()
             Task { await model.refreshHealth() }
         }

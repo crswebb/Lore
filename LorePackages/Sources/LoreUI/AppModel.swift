@@ -169,7 +169,17 @@ public final class AppModel {
         await refreshProjects()
         if let first = projects.first { await select(project: first.id) }
         await refreshHealth()
-        showSetup = !settings.onboardingComplete || !modelsReady
+
+        // Smart default: if Apple was the default (not an explicit choice) but
+        // this Mac can't run it, fall back to Ollama so the user isn't stuck.
+        if !settings.chatSourceChosen && settings.chatSource == .apple && !appleAvailable {
+            settings.chatSource = .ollama
+            reconfigureProviders()
+            await refreshHealth()
+        }
+
+        // Only surface setup when something actually isn't ready.
+        showSetup = !modelsReady
     }
 
     public func refreshHealth() async {

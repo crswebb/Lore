@@ -40,6 +40,11 @@ public final class SettingsStore {
     public var chatSource: ChatSource {
         didSet { defaults.set(chatSource.rawValue, forKey: "chatSource") }
     }
+    /// True once the user has explicitly picked a chat source, so the smart
+    /// default (Apple, falling back to Ollama) stops overriding their choice.
+    public var chatSourceChosen: Bool {
+        didSet { defaults.set(chatSourceChosen, forKey: "chatSourceChosen") }
+    }
     public var externalBaseURLString: String {
         didSet { defaults.set(externalBaseURLString, forKey: "externalBaseURL") }
     }
@@ -61,11 +66,13 @@ public final class SettingsStore {
         self.windowTranslucency = (defaults.object(forKey: "windowTranslucency") as? Double) ?? 0.25
         self.externalBaseURLString = defaults.string(forKey: "externalBaseURL") ?? "https://api.openai.com/v1"
         self.externalChatModel = defaults.string(forKey: "externalChatModel") ?? "gpt-4o-mini"
+        self.chatSourceChosen = defaults.bool(forKey: "chatSourceChosen")
         if let raw = defaults.string(forKey: "chatSource"), let source = ChatSource(rawValue: raw) {
             self.chatSource = source
+        } else if defaults.bool(forKey: "useExternalAPI") {
+            self.chatSource = .external          // migrate old boolean
         } else {
-            // Migrate the old boolean.
-            self.chatSource = defaults.bool(forKey: "useExternalAPI") ? .external : .ollama
+            self.chatSource = .apple             // zero-setup default (falls back to Ollama if unsupported)
         }
     }
 
