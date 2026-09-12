@@ -20,3 +20,6 @@ Lore.xcodeproj/
 
 # Local build output
 build/
+
+# Packaged release artifacts
+dist/

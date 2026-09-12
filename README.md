@@ -73,7 +73,38 @@ provider. Your documents, embeddings, and search index never leave the machine.
   prompt‑injection defence that matters for RAG.
 - **No telemetry.** Lore phones no home.
 
+## Download
+
+Just want to run Lore? Grab the latest `.dmg` from the
+**[Releases page](https://github.com/crswebb/Lore/releases/latest)**, open it,
+and drag **Lore** into your Applications folder.
+
+The app is not yet signed with an Apple Developer ID, so macOS Gatekeeper will
+block it on first launch ("Apple could not verify Lore is free of malware"). To
+open it anyway, do this **once**:
+
+1. Try to open Lore (double-click). macOS refuses — that's expected.
+2. Open **System Settings › Privacy & Security**, scroll down, and click
+   **“Open Anyway”** next to the message about Lore. Confirm.
+
+Lore then opens normally every time after that. Alternatively, from Terminal:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Lore.app
+```
+
+> Only run that command on an app you trust and downloaded from this repo’s
+> Releases page — it removes the quarantine flag macOS uses to gate unsigned apps.
+
+Prefer to build it yourself? See [Getting started](#getting-started) below.
+
 ## Requirements
+
+> **The prebuilt download requires an Apple‑silicon Mac** (M‑series) running
+> **macOS 26 (Tahoe)**. Apple Intelligence — Lore’s default chat runtime —
+> requires Apple silicon regardless.
+
+
 
 - **macOS 26 (Tahoe)** or later — Lore uses the Liquid Glass and Apple
   Intelligence / Foundation Models APIs.
