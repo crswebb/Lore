@@ -118,9 +118,15 @@ private struct AdvancedSettingsTab: View {
     var body: some View {
         @Bindable var settings = model.settings
         Form {
-            Section("External chat API") {
-                Toggle("Use an external API for chat", isOn: $settings.useExternalAPI)
-                if settings.useExternalAPI {
+            Section("Chat provider") {
+                Picker("Chat runs on", selection: $settings.chatSource) {
+                    Text("Ollama").tag(SettingsStore.ChatSource.ollama)
+                    Text("Apple").tag(SettingsStore.ChatSource.apple)
+                    Text("External").tag(SettingsStore.ChatSource.external)
+                }
+                .pickerStyle(.segmented)
+
+                if settings.chatSource == .external {
                     TextField("Base URL", text: $settings.externalBaseURLString, prompt: Text("https://api.openai.com/v1"))
                     SecureField("API key", text: $apiKeyDraft)
                     TextField("Chat model", text: $settings.externalChatModel, prompt: Text("gpt-4o-mini"))
@@ -132,22 +138,25 @@ private struct AdvancedSettingsTab: View {
                 }
             }
 
-            if settings.useExternalAPI {
-                Section {
-                    Label(
-                        "Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama).",
-                        systemImage: "cloud"
-                    )
-                    .font(.caption).foregroundStyle(.secondary)
-                }
-            } else {
-                Section {
-                    Text("Off by default — everything runs locally on your Mac. Turn this on to use OpenAI, OpenRouter, a remote Ollama, or any OpenAI-compatible endpoint for chat.")
+            Section {
+                switch settings.chatSource {
+                case .ollama:
+                    Label("Chat runs on a local Ollama model. Fully private and offline.", systemImage: "desktopcomputer")
                         .font(.caption).foregroundStyle(.secondary)
+                case .apple:
+                    Label("Chat uses Apple's on-device model (Apple Intelligence). No download, fully private — requires a supported Mac with Apple Intelligence enabled.", systemImage: "apple.logo")
+                        .font(.caption).foregroundStyle(.secondary)
+                case .external:
+                    Label("Chat is sent to your external provider. Your documents and search index stay on this Mac (embeddings always run locally via Ollama).", systemImage: "cloud")
+                        .font(.caption).foregroundStyle(model.externalActive ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
                 }
             }
         }
         .formStyle(.grouped)
         .onAppear { apiKeyDraft = model.settings.externalAPIKey }
+        .onChange(of: settings.chatSource) {
+            model.reconfigureProviders()
+            Task { await model.refreshHealth() }
+        }
     }
 }

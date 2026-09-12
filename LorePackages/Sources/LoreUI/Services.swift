@@ -31,9 +31,14 @@ public final class SettingsStore {
         didSet { defaults.set(windowTranslucency, forKey: "windowTranslucency") }
     }
 
-    // External chat API (advanced). Chat only — embeddings stay local.
-    public var useExternalAPI: Bool {
-        didSet { defaults.set(useExternalAPI, forKey: "useExternalAPI") }
+    /// Where chat generation runs. Embeddings always run locally via Ollama.
+    public enum ChatSource: String, CaseIterable, Sendable {
+        case ollama    // local Ollama model
+        case apple     // Apple Intelligence (on-device)
+        case external  // OpenAI-compatible API
+    }
+    public var chatSource: ChatSource {
+        didSet { defaults.set(chatSource.rawValue, forKey: "chatSource") }
     }
     public var externalBaseURLString: String {
         didSet { defaults.set(externalBaseURLString, forKey: "externalBaseURL") }
@@ -54,14 +59,19 @@ public final class SettingsStore {
         self.ollamaBaseURLString = defaults.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
         self.onboardingComplete = defaults.bool(forKey: "onboardingComplete")
         self.windowTranslucency = (defaults.object(forKey: "windowTranslucency") as? Double) ?? 0.25
-        self.useExternalAPI = defaults.bool(forKey: "useExternalAPI")
         self.externalBaseURLString = defaults.string(forKey: "externalBaseURL") ?? "https://api.openai.com/v1"
         self.externalChatModel = defaults.string(forKey: "externalChatModel") ?? "gpt-4o-mini"
+        if let raw = defaults.string(forKey: "chatSource"), let source = ChatSource(rawValue: raw) {
+            self.chatSource = source
+        } else {
+            // Migrate the old boolean.
+            self.chatSource = defaults.bool(forKey: "useExternalAPI") ? .external : .ollama
+        }
     }
 
+    /// The external API is fully filled in (used only when chatSource == .external).
     public var externalConfigured: Bool {
-        guard useExternalAPI else { return false }
-        return URL(string: externalBaseURLString) != nil
+        URL(string: externalBaseURLString) != nil
             && !externalAPIKey.isEmpty
             && !externalChatModel.trimmingCharacters(in: .whitespaces).isEmpty
     }

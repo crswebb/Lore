@@ -96,15 +96,23 @@ public final class AppModel {
         reconfigureProviders()
     }
 
-    /// The chat model to send in requests — external model name when the
-    /// external API is in use, otherwise the selected local model.
+    /// Whether the on-device Apple model is currently usable (refreshed in
+    /// refreshHealth when Apple Intelligence is the selected source).
+    public var appleAvailable = false
+
+    /// The chat model to send in requests, per selected source.
     public var effectiveChatModel: String {
-        settings.useExternalAPI ? settings.externalChatModel : settings.chatModel
+        switch settings.chatSource {
+        case .external: return settings.externalChatModel
+        case .apple: return "apple-intelligence"
+        case .ollama: return settings.chatModel
+        }
     }
 
-    /// True when chat is actually going to a configured external API.
+    /// True when chat is actually going to a configured external API (the only
+    /// source that sends data off the Mac).
     public var externalActive: Bool {
-        settings.useExternalAPI && settings.externalConfigured
+        settings.chatSource == .external && settings.externalConfigured
     }
 
     /// Host of the external endpoint, for the "data leaves your Mac" indicator.
@@ -123,9 +131,15 @@ public final class AppModel {
         setupService = OllamaSetupService(provider: ollama)
 
         let chatProvider: any LLMProvider
-        if settings.externalConfigured, let url = URL(string: settings.externalBaseURLString) {
-            chatProvider = OpenAICompatibleProvider(baseURL: url, apiKey: settings.externalAPIKey)
-        } else {
+        switch settings.chatSource {
+        case .apple:
+            chatProvider = AppleFoundationModelProvider()
+        case .external where settings.externalConfigured:
+            chatProvider = OpenAICompatibleProvider(
+                baseURL: URL(string: settings.externalBaseURLString) ?? ollama.baseURL,
+                apiKey: settings.externalAPIKey
+            )
+        default:
             chatProvider = ollama
         }
         llm = chatProvider
@@ -146,16 +160,25 @@ public final class AppModel {
 
     public func refreshHealth() async {
         health = await setupService.health()
+        if settings.chatSource == .apple {
+            if case .ready = await AppleFoundationModelProvider().availability() {
+                appleAvailable = true
+            } else {
+                appleAvailable = false
+            }
+        }
     }
 
     public var modelsReady: Bool {
         guard case let .ready(models) = health else { return false }
         // Embeddings always run locally, so Ollama must have the embedding model.
         let embedReady = Self.modelPresent(settings.embeddingModel, in: models)
-        // Chat is ready when the external API is configured, or Ollama has the model.
-        let chatReady = settings.useExternalAPI
-            ? settings.externalConfigured
-            : Self.modelPresent(settings.chatModel, in: models)
+        let chatReady: Bool
+        switch settings.chatSource {
+        case .ollama: chatReady = Self.modelPresent(settings.chatModel, in: models)
+        case .apple: chatReady = appleAvailable
+        case .external: chatReady = settings.externalConfigured
+        }
         return embedReady && chatReady
     }
 

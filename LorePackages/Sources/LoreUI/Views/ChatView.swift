@@ -171,7 +171,7 @@ struct ChatView: View {
             Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
             Text(bannerMessage)
             Spacer()
-            if model.settings.useExternalAPI && !model.settings.externalConfigured {
+            if bannerNeedsSettings {
                 SettingsLink { Text("Open Settings") }
                     .buttonStyle(.glass)
             } else {
@@ -183,13 +183,24 @@ struct ChatView: View {
         .background(.orange.opacity(0.12))
     }
 
+    private var bannerNeedsSettings: Bool {
+        switch model.settings.chatSource {
+        case .external: return !model.settings.externalConfigured
+        case .apple: return !model.appleAvailable
+        case .ollama: return false
+        }
+    }
+
     private var bannerMessage: String {
-        if model.settings.useExternalAPI && !model.settings.externalConfigured {
+        switch model.settings.chatSource {
+        case .external where !model.settings.externalConfigured:
             return "Your external chat API isn't fully configured yet."
-        } else if model.settings.useExternalAPI {
-            return "Ollama is needed for document search (embeddings)."
-        } else {
+        case .apple where !model.appleAvailable:
+            return "Apple Intelligence isn't available yet — enable it in System Settings."
+        case .ollama:
             return "Local model isn't ready yet."
+        default:
+            return "Ollama is needed for document search (embeddings)."
         }
     }
 }
