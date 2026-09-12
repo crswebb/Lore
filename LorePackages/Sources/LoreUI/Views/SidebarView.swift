@@ -50,18 +50,22 @@ struct SidebarView: View {
 
     private var statusBar: some View {
         HStack {
-            Button {
-                model.showSetup = true
-            } label: {
-                healthPill
+            if model.usesOllama {
+                Button {
+                    model.showSetup = true
+                } label: {
+                    healthPill
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
             if model.externalActive {
                 StatusPill(.neutral, "☁ External chat")
                     .help("Chat is sent to \(model.externalHost). Embeddings stay local.")
             } else if model.settings.chatSource == .apple {
                 StatusPill(model.appleAvailable ? .good : .warning, "Apple Intelligence")
-                    .help("Chat runs on Apple's on-device model. Embeddings run locally via Ollama.")
+                    .help(model.usesOllama
+                          ? "Chat runs on Apple's on-device model. Embeddings run locally via Ollama."
+                          : "Chat and search both run fully on-device via Apple. No Ollama needed.")
             }
             Spacer()
         }

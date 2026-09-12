@@ -156,4 +156,18 @@ log(memResult.memoryNotes.contains { $0.lowercased().contains("grön") }
     ? "✅ Recalled the earlier statement from chat memory."
     : "⚠️ Did not recall the earlier statement.")
 
+// 11. Apple on-device embeddings (fallback for no-Ollama Apple mode)
+if let apple = AppleEmbeddingProvider() {
+    log("\n• Apple on-device embeddings (dim \(apple.dimensions))…")
+    let loaded = apple.preload()
+    log("  preload: \(loaded ? "ok" : "failed")")
+    if loaded {
+        let vecs = try await apple.embed(["Min dishwasher visar felkod F01", "dishwasher drainage error"])
+        log("  \(vecs.count) vectors, \(vecs.first?.count ?? 0) dims each")
+        log("  cosine(related sv/en): \(String(format: "%.3f", VectorSearch.cosineSimilarity(vecs[0], vecs[1])))")
+    }
+} else {
+    log("\n• Apple on-device embeddings: not offered on this Mac.")
+}
+
 exit(grounded ? 0 : 2)

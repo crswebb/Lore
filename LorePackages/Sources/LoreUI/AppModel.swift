@@ -21,7 +21,7 @@ public final class AppModel {
     @ObservationIgnored var chunksRepo: ChunkRepository
     @ObservationIgnored var memoryRepo: MemoryRepository
     @ObservationIgnored var setupService: OllamaSetupService
-    @ObservationIgnored var embedder: OllamaEmbeddingProvider
+    @ObservationIgnored var embedder: any EmbeddingProvider
     @ObservationIgnored var ollama: OllamaProvider
     @ObservationIgnored var llm: any LLMProvider
     @ObservationIgnored var indexing: IndexingService
@@ -100,6 +100,16 @@ public final class AppModel {
     /// refreshHealth when Apple Intelligence is the selected source).
     public var appleAvailable = false
 
+    /// True when embeddings are running on Apple's on-device model instead of
+    /// Ollama (Apple chat selected + no Ollama available). Ollama is then out of
+    /// the workflow entirely, so its status badge is hidden.
+    public var usingAppleEmbeddings = false
+
+    /// Whether Ollama is part of the current workflow (for showing its badge).
+    public var usesOllama: Bool {
+        !(usingAppleEmbeddings && settings.chatSource == .apple)
+    }
+
     /// The chat model to send in requests, per selected source.
     public var effectiveChatModel: String {
         switch settings.chatSource {
@@ -124,9 +134,13 @@ public final class AppModel {
     /// locally via Ollama; chat goes to the external API when configured.
     public func reconfigureProviders() {
         let base = settings.ollamaBaseURL
-        embedder = OllamaEmbeddingProvider(
-            baseURL: base, model: settings.embeddingModel, dimensions: OllamaModelCatalog.embeddingDimensions
-        )
+        if usingAppleEmbeddings, let apple = AppleEmbeddingProvider() {
+            embedder = apple
+        } else {
+            embedder = OllamaEmbeddingProvider(
+                baseURL: base, model: settings.embeddingModel, dimensions: OllamaModelCatalog.embeddingDimensions
+            )
+        }
         ollama = OllamaProvider(baseURL: base)
         setupService = OllamaSetupService(provider: ollama)
 
@@ -167,15 +181,34 @@ public final class AppModel {
                 appleAvailable = false
             }
         }
+
+        // If Apple chat is selected but Ollama can't do embeddings, fall back to
+        // Apple's on-device embeddings (so no Ollama is needed at all).
+        let ollamaEmbedReady: Bool
+        if case let .ready(models) = health {
+            ollamaEmbedReady = Self.modelPresent(settings.embeddingModel, in: models)
+        } else {
+            ollamaEmbedReady = false
+        }
+        let shouldUseApple = settings.chatSource == .apple && !ollamaEmbedReady
+            && (AppleEmbeddingProvider()?.preload() ?? false)
+        if shouldUseApple != usingAppleEmbeddings {
+            usingAppleEmbeddings = shouldUseApple
+            reconfigureProviders()
+        }
     }
 
     public var modelsReady: Bool {
-        guard case let .ready(models) = health else { return false }
-        // Embeddings always run locally, so Ollama must have the embedding model.
-        let embedReady = Self.modelPresent(settings.embeddingModel, in: models)
+        let ollamaModels: [String]
+        if case let .ready(models) = health { ollamaModels = models } else { ollamaModels = [] }
+
+        // Embeddings run on Apple on-device (fallback) or Ollama.
+        let embedReady = usingAppleEmbeddings
+            ? true
+            : Self.modelPresent(settings.embeddingModel, in: ollamaModels)
         let chatReady: Bool
         switch settings.chatSource {
-        case .ollama: chatReady = Self.modelPresent(settings.chatModel, in: models)
+        case .ollama: chatReady = Self.modelPresent(settings.chatModel, in: ollamaModels)
         case .apple: chatReady = appleAvailable
         case .external: chatReady = settings.externalConfigured
         }
