@@ -640,8 +640,10 @@ public final class AppModel {
             return
         }
 
+        // Apple's on-device model has a small context window, so keep it lean.
+        let compact = settings.chatSource == .apple
         let history = Array(messages.dropLast())
-            .suffix(6)
+            .suffix(compact ? 2 : 6)
             .map { ChatTurn(role: $0.role, content: $0.text) }
 
         var assistant = Message(chatID: chatID, role: .assistant, text: "")
@@ -653,7 +655,8 @@ public final class AppModel {
                 project: project,
                 model: effectiveChatModel,
                 history: history,
-                question: trimmed
+                question: trimmed,
+                compact: compact
             )
             for try await token in handle.stream {
                 if token.isDone { break }

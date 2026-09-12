@@ -25,9 +25,12 @@ public struct AppleFoundationModelProvider: LLMProvider {
         AsyncThrowingStream { $0.finish() }
     }
 
+    /// Rough safety cap on prompt length for the small on-device context window.
+    private static let maxPromptCharacters = 9000
+
     public func chat(_ request: ChatRequest) -> AsyncThrowingStream<ChatToken, Error> {
         let instructions = request.messages.first { $0.role == .system }?.content
-        let prompt = Self.buildPrompt(request.messages)
+        let prompt = String(Self.buildPrompt(request.messages).prefix(Self.maxPromptCharacters))
         let temperature = request.temperature
 
         return AsyncThrowingStream { continuation in

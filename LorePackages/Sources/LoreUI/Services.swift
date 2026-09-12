@@ -258,7 +258,12 @@ public struct RetrievalService: Sendable {
         self.candidatePool = topK * 4
     }
 
-    public func retrieve(projectID: UUID, question: String) async throws -> RetrievalResult {
+    public func retrieve(
+        projectID: UUID,
+        question: String,
+        maxPassages: Int? = nil,
+        passageCharLimit: Int? = nil
+    ) async throws -> RetrievalResult {
         // Full project inventory — always provided to the model.
         let allDocuments = try await documents.documents(inProject: projectID)
         let library = allDocuments.map { LibraryItem(title: $0.title, facts: $0.metadata) }
@@ -290,7 +295,7 @@ public struct RetrievalService: Sendable {
         )
 
         let fused = ReciprocalRankFusion().fuse([vectorIDs, keywordIDs])
-        let selected = Array(fused.prefix(topK))
+        let selected = Array(fused.prefix(maxPassages ?? topK))
         guard !selected.isEmpty else {
             return RetrievalResult(passages: [], citations: [], metadata: [:], library: library, memoryNotes: memoryNotes)
         }
@@ -312,11 +317,12 @@ public struct RetrievalService: Sendable {
         var metadata: [String: String] = [:]
         for (offset, chunk) in orderedChunks.enumerated() {
             let doc = docs[chunk.documentID]
+            let text = passageCharLimit.map { String(chunk.text.prefix($0)) } ?? chunk.text
             passages.append(RetrievedPassage(
                 index: offset + 1,
                 sourceTitle: doc?.title ?? "Document",
                 page: chunk.page,
-                text: chunk.text
+                text: text
             ))
             citations.append(Citation(documentID: chunk.documentID, chunkID: chunk.id, page: chunk.page))
             if let docMeta = doc?.metadata {
@@ -351,17 +357,28 @@ public struct ChatService: Sendable {
         project: Project,
         model: String,
         history: [ChatTurn],
-        question: String
+        question: String,
+        compact: Bool = false
     ) async throws -> AnswerHandle {
-        let result = try await retrieval.retrieve(projectID: project.id, question: question)
+        // Compact mode fits small context windows (e.g. Apple's on-device model):
+        // fewer, shorter passages; capped library; no chat-memory notes.
+        let result = try await retrieval.retrieve(
+            projectID: project.id,
+            question: question,
+            maxPassages: compact ? 3 : nil,
+            passageCharLimit: compact ? 600 : nil
+        )
+        let library = compact ? Array(result.library.prefix(30)) : result.library
+        let memories = compact ? [] : result.memoryNotes
         let messages = promptBuilder.build(
             projectSystemPrompt: project.systemPrompt,
-            library: result.library,
+            library: library,
             passages: result.passages,
             metadata: result.metadata,
-            memories: result.memoryNotes,
+            memories: memories,
             history: history,
-            question: question
+            question: question,
+            compact: compact
         )
         let stream = llm.chat(ChatRequest(model: model, messages: messages))
         return AnswerHandle(citations: result.citations, passages: result.passages, stream: stream)
