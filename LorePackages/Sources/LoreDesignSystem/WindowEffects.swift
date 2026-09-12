@@ -57,12 +57,16 @@ public struct AdaptiveBackground: View {
     }
 
     public var body: some View {
-        ZStack {
+        let t = max(0, min(1, translucency))
+        // Scrim fades out first; then the frosted vibrancy itself fades so the
+        // top of the range approaches a clear view of the desktop.
+        return ZStack {
             VisualEffectView()
+                .opacity(1 - t * 0.85)
                 .ignoresSafeArea()
             Rectangle()
                 .fill(Color(nsColor: .windowBackgroundColor))
-                .opacity(1 - max(0, min(1, translucency)))
+                .opacity(1 - t)
                 .ignoresSafeArea()
             LinearGradient(
                 colors: [
@@ -73,6 +77,7 @@ public struct AdaptiveBackground: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .opacity(1 - t)
             .ignoresSafeArea()
             .allowsHitTesting(false)
         }
