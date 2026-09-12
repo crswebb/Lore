@@ -516,7 +516,7 @@ public final class AppModel {
     }
 
     /// Resolve a possibly-generic product reference ("min dator", "my screen")
-    /// to a concrete product named in the project's documents, when possible.
+    /// to a concrete product named on the shelf's documents, when possible.
     func resolveProductName(_ raw: String) -> String {
         let lower = raw.lowercased().trimmingCharacters(in: .whitespaces)
         let genericComputer = ["min dator", "datorn", "dator", "my computer", "the computer", "computer",
@@ -658,7 +658,7 @@ public final class AppModel {
             let query = intent.kind == .web ? product : "\(product) \(intent.kind.querySuffix)"
             let ack = Message(
                 chatID: chatID, role: .assistant,
-                text: "Searching the web for \(intent.kind.ackNoun) for “\(product)”. I'll show the results in a panel — pick any to add to this project."
+                text: "Searching the web for \(intent.kind.ackNoun) for “\(product)”. I'll show the results in a panel — pick any to add to this shelf."
             )
             messages.append(ack)
             try? await chatsRepo.add(ack)
@@ -671,12 +671,12 @@ public final class AppModel {
             return
         }
 
-        // Guardrail: only handle questions about this project's products /
+        // Guardrail: only handle questions about this shelf's products /
         // documents (and fetching/managing them). Decline anything off-topic.
         if await scopeAllows(trimmed) == false {
             let decline = Message(
                 chatID: chatID, role: .assistant,
-                text: "I can only help with the documents and products in this project. Ask me about your products, or ask me to fetch a manual or technical specs for one of them."
+                text: "I can only help with the documents and products in this shelf. Ask me about your products, or ask me to fetch a manual or technical specs for one of them."
             )
             messages.append(decline)
             try? await chatsRepo.add(decline)
@@ -746,7 +746,7 @@ public final class AppModel {
 
         let system = """
         You are a strict router for a personal product-knowledge assistant. The \
-        user's project is about their OWN products and documents. Classify the \
+        user's shelf is about their OWN products and documents. Classify the \
         user's message as:
         - RELATED: about their products/documents, using or troubleshooting them, \
         their specs/warranty/purchase, or a request to find/fetch info or \
@@ -755,7 +755,7 @@ public final class AppModel {
         creative writing, or anything not about the user's own items.
         Answer with exactly one word: RELATED or OFFTOPIC.
         """
-        let user = "Products/documents in the project: \(list.isEmpty ? "(none yet)" : list).\n\nUser message: \"\(question)\""
+        let user = "Products/documents on the shelf: \(list.isEmpty ? "(none yet)" : list).\n\nUser message: \"\(question)\""
         let request = ChatRequest(
             model: effectiveChatModel,
             messages: [ChatTurn(role: .system, content: system), ChatTurn(role: .user, content: user)],

@@ -13,7 +13,7 @@ struct SidebarView: View {
             get: { model.selectedProjectID },
             set: { id in if let id { Task { await model.select(project: id) } } }
         )) {
-            Section("Projects") {
+            Section("Shelves") {
                 ForEach(model.projects) { project in
                     ProjectRow(project: project)
                         .tag(project.id)
@@ -38,7 +38,7 @@ struct SidebarView: View {
                 Button {
                     showNewProject = true
                 } label: {
-                    Label("New Project", systemImage: "plus")
+                    Label("New Shelf", systemImage: "plus")
                 }
             }
         }

@@ -26,7 +26,7 @@ func statusLabel(for status: DocumentStatus) -> String {
 
 // MARK: - Project editor (create + edit)
 
-/// Convenience for the "New Project" call sites.
+/// Convenience for the "New Shelf" call sites.
 struct NewProjectSheet: View {
     var body: some View { ProjectEditorSheet() }
 }
@@ -50,9 +50,9 @@ struct ProjectEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text(isEditing ? "Edit Project" : "New Project").font(.title2.bold())
+            Text(isEditing ? "Edit Shelf" : "New Shelf").font(.title2.bold())
 
-            TextField("Project name", text: $name)
+            TextField("Shelf name", text: $name)
                 .textFieldStyle(.roundedBorder)
                 .font(.title3)
 

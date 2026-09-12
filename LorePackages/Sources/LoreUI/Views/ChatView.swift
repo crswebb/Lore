@@ -12,7 +12,7 @@ struct ChatView: View {
     }
 
     private let examples = [
-        "Summarize what's in this project.",
+        "Summarize what's in this shelf.",
         "What should I do about error code F01?",
         "Is the warranty still valid?",
     ]
@@ -70,9 +70,9 @@ struct ChatView: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Ask your project")
+            Text("Ask your shelf")
                 .font(.title2.bold())
-            Text("Answers are grounded in this project's documents, with citations.")
+            Text("Answers are grounded in this shelf's documents, with citations.")
                 .foregroundStyle(.secondary)
             ForEach(examples, id: \.self) { example in
                 Button {
@@ -98,7 +98,7 @@ struct ChatView: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            GrowingTextEditor(text: $draft, placeholder: "Ask your project…", onSubmit: send)
+            GrowingTextEditor(text: $draft, placeholder: "Ask your shelf…", onSubmit: send)
                 .padding(.leading, 16)
                 .padding(.vertical, 11)
 

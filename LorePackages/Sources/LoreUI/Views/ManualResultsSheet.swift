@@ -15,7 +15,7 @@ struct ManualResultsSheet: View {
                 Text(model.webResultsHeading).font(.title2.bold())
                 Spacer()
             }
-            Text("Pick the ones to add to this project. PDFs are downloaded and stored; pages are indexed by their link.")
+            Text("Pick the ones to add to this shelf. PDFs are downloaded and stored; pages are indexed by their link.")
                 .font(.callout).foregroundStyle(.secondary)
 
             if model.manualSearching {

@@ -34,7 +34,7 @@ public struct RootView: View {
                 ContentUnavailableView(
                     "Explore your lore",
                     systemImage: "sparkles",
-                    description: Text("Create a project to start collecting knowledge and asking questions.")
+                    description: Text("Create a shelf to start collecting knowledge and asking questions.")
                 )
             }
         }
@@ -58,7 +58,7 @@ public struct RootView: View {
             Button("Search online") { model.confirmManualSearch() }
             Button("Not now", role: .cancel) { model.manualPrompt = nil }
         } message: { prompt in
-            Text("Lore found “\(prompt.productLabel)”. Want me to search the web for its user manual and add it to this project?")
+            Text("Lore found “\(prompt.productLabel)”. Want me to search the web for its user manual and add it to this shelf?")
         }
         .alert(
             "Something went wrong",
@@ -77,11 +77,11 @@ struct EmptyProjectsPlaceholder: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label("No projects yet", systemImage: "folder.badge.plus")
+            Label("No shelves yet", systemImage: "folder.badge.plus")
         } description: {
-            Text("A project groups documents, links, and chats around one topic — like your home, a car, or a research area.")
+            Text("A shelf holds a topic's documents, links, and chats — like a shelf for your home or car.")
         } actions: {
-            Button("Create your first project") { showNewProject = true }
+            Button("Create your first shelf") { showNewProject = true }
                 .buttonStyle(.glassProminent)
         }
         .sheet(isPresented: $showNewProject) {
