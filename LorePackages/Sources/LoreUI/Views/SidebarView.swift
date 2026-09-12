@@ -56,6 +56,10 @@ struct SidebarView: View {
                 healthPill
             }
             .buttonStyle(.plain)
+            if model.externalActive {
+                StatusPill(.neutral, "☁ External chat")
+                    .help("Chat is sent to \(model.externalHost). Embeddings stay local.")
+            }
             Spacer()
         }
         .padding(10)

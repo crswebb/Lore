@@ -5,6 +5,7 @@ import LoreDesignSystem
 /// Settings window (⌘,). Keeps model choice out of the main UI but easy to reach.
 public struct SettingsView: View {
     @Bindable var model: AppModel
+    @State private var apiKeyDraft = ""
 
     public init(model: AppModel) {
         self.model = model
@@ -49,6 +50,22 @@ public struct SettingsView: View {
                 }
             }
 
+            Section("Advanced — External chat API") {
+                Toggle("Use an external API for chat", isOn: $settings.useExternalAPI)
+                if settings.useExternalAPI {
+                    TextField("Base URL", text: $settings.externalBaseURLString, prompt: Text("https://api.openai.com/v1"))
+                    SecureField("API key", text: $apiKeyDraft)
+                    TextField("Chat model", text: $settings.externalChatModel, prompt: Text("gpt-4o-mini"))
+                    Button("Apply & reconnect") {
+                        settings.externalAPIKey = apiKeyDraft
+                        model.reconfigureProviders()
+                        Task { await model.refreshHealth() }
+                    }
+                    Text("Any OpenAI-compatible endpoint (OpenAI, OpenRouter, a remote Ollama’s /v1, …). Embeddings still run locally via Ollama, so your documents stay private and the search index stays consistent.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+
             Section {
                 Button("Manage local models…") { model.showSetup = true }
                 Text("Download or switch models, and verify the local runtime.")
@@ -56,12 +73,15 @@ public struct SettingsView: View {
             }
 
             Section {
-                Text("Everything runs locally on your Mac. Explore your lore.")
+                Text(settings.useExternalAPI
+                     ? "Chat uses your external API; embeddings run locally. Explore your lore."
+                     : "Everything runs locally on your Mac. Explore your lore.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460, height: 360)
+        .frame(width: 480, height: 520)
+        .onAppear { apiKeyDraft = model.settings.externalAPIKey }
     }
 
     private var chatModelOptions: [String] {

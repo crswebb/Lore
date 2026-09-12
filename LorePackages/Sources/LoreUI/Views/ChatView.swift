@@ -19,9 +19,10 @@ struct ChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if case .ready = model.health, model.modelsReady {
-                EmptyView()
-            } else {
+            if model.externalActive {
+                externalBar
+            }
+            if !model.modelsReady {
                 setupBanner
             }
 
@@ -151,16 +152,45 @@ struct ChatView: View {
         model.chats.first { $0.id == model.selectedChatID }?.title ?? "Chat"
     }
 
+    /// Persistent privacy indicator: chat is being sent to an external service.
+    private var externalBar: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "cloud")
+            Text("Chat is sent to \(model.externalHost) using \(model.settings.externalChatModel). Your documents stay on this Mac.")
+                .lineLimit(2)
+            Spacer()
+        }
+        .font(.caption)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(LoreTheme.accent.opacity(0.14))
+    }
+
     private var setupBanner: some View {
         HStack {
             Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
-            Text("Local model isn't ready yet.")
+            Text(bannerMessage)
             Spacer()
-            Button("Set up") { model.showSetup = true }
-                .buttonStyle(.glass)
+            if model.settings.useExternalAPI && !model.settings.externalConfigured {
+                SettingsLink { Text("Open Settings") }
+                    .buttonStyle(.glass)
+            } else {
+                Button("Set up") { model.showSetup = true }
+                    .buttonStyle(.glass)
+            }
         }
         .padding(12)
         .background(.orange.opacity(0.12))
+    }
+
+    private var bannerMessage: String {
+        if model.settings.useExternalAPI && !model.settings.externalConfigured {
+            return "Your external chat API isn't fully configured yet."
+        } else if model.settings.useExternalAPI {
+            return "Ollama is needed for document search (embeddings)."
+        } else {
+            return "Local model isn't ready yet."
+        }
     }
 }
 

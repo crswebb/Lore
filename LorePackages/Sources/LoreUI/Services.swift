@@ -31,6 +31,22 @@ public final class SettingsStore {
         didSet { defaults.set(windowTranslucency, forKey: "windowTranslucency") }
     }
 
+    // External chat API (advanced). Chat only — embeddings stay local.
+    public var useExternalAPI: Bool {
+        didSet { defaults.set(useExternalAPI, forKey: "useExternalAPI") }
+    }
+    public var externalBaseURLString: String {
+        didSet { defaults.set(externalBaseURLString, forKey: "externalBaseURL") }
+    }
+    public var externalChatModel: String {
+        didSet { defaults.set(externalChatModel, forKey: "externalChatModel") }
+    }
+    /// API key, stored in the Keychain (not UserDefaults).
+    public var externalAPIKey: String {
+        get { Keychain.get("externalAPIKey") ?? "" }
+        set { Keychain.set(newValue, account: "externalAPIKey") }
+    }
+
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.chatModel = defaults.string(forKey: "chatModel") ?? OllamaModelCatalog.chatModels[0].name
@@ -38,6 +54,16 @@ public final class SettingsStore {
         self.ollamaBaseURLString = defaults.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
         self.onboardingComplete = defaults.bool(forKey: "onboardingComplete")
         self.windowTranslucency = (defaults.object(forKey: "windowTranslucency") as? Double) ?? 0.25
+        self.useExternalAPI = defaults.bool(forKey: "useExternalAPI")
+        self.externalBaseURLString = defaults.string(forKey: "externalBaseURL") ?? "https://api.openai.com/v1"
+        self.externalChatModel = defaults.string(forKey: "externalChatModel") ?? "gpt-4o-mini"
+    }
+
+    public var externalConfigured: Bool {
+        guard useExternalAPI else { return false }
+        return URL(string: externalBaseURLString) != nil
+            && !externalAPIKey.isEmpty
+            && !externalChatModel.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     public var ollamaBaseURL: URL {

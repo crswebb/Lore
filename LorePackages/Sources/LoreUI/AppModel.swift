@@ -22,7 +22,8 @@ public final class AppModel {
     @ObservationIgnored var memoryRepo: MemoryRepository
     @ObservationIgnored var setupService: OllamaSetupService
     @ObservationIgnored var embedder: OllamaEmbeddingProvider
-    @ObservationIgnored var llm: OllamaProvider
+    @ObservationIgnored var ollama: OllamaProvider
+    @ObservationIgnored var llm: any LLMProvider
     @ObservationIgnored var indexing: IndexingService
     @ObservationIgnored var chatService: ChatService
     @ObservationIgnored var metadataExtractor: MetadataExtractor
@@ -82,6 +83,7 @@ public final class AppModel {
             model: settings.embeddingModel,
             dimensions: OllamaModelCatalog.embeddingDimensions
         )
+        self.ollama = llm
         self.llm = llm
         self.embedder = embedder
         self.setupService = OllamaSetupService(provider: llm)
@@ -89,6 +91,48 @@ public final class AppModel {
         let retrieval = RetrievalService(chunks: chunksRepo, documents: documentsRepo, memory: memoryRepo, embedder: embedder)
         self.chatService = ChatService(retrieval: retrieval, llm: llm)
         self.metadataExtractor = MetadataExtractor(llm: llm)
+
+        // Apply persisted provider choice (e.g. external chat API).
+        reconfigureProviders()
+    }
+
+    /// The chat model to send in requests — external model name when the
+    /// external API is in use, otherwise the selected local model.
+    public var effectiveChatModel: String {
+        settings.useExternalAPI ? settings.externalChatModel : settings.chatModel
+    }
+
+    /// True when chat is actually going to a configured external API.
+    public var externalActive: Bool {
+        settings.useExternalAPI && settings.externalConfigured
+    }
+
+    /// Host of the external endpoint, for the "data leaves your Mac" indicator.
+    public var externalHost: String {
+        URL(string: settings.externalBaseURLString)?.host ?? settings.externalBaseURLString
+    }
+
+    /// Rebuild providers/services from current settings. Embeddings always run
+    /// locally via Ollama; chat goes to the external API when configured.
+    public func reconfigureProviders() {
+        let base = settings.ollamaBaseURL
+        embedder = OllamaEmbeddingProvider(
+            baseURL: base, model: settings.embeddingModel, dimensions: OllamaModelCatalog.embeddingDimensions
+        )
+        ollama = OllamaProvider(baseURL: base)
+        setupService = OllamaSetupService(provider: ollama)
+
+        let chatProvider: any LLMProvider
+        if settings.externalConfigured, let url = URL(string: settings.externalBaseURLString) {
+            chatProvider = OpenAICompatibleProvider(baseURL: url, apiKey: settings.externalAPIKey)
+        } else {
+            chatProvider = ollama
+        }
+        llm = chatProvider
+        indexing = IndexingService(documents: documentsRepo, chunks: chunksRepo, embedder: embedder)
+        let retrieval = RetrievalService(chunks: chunksRepo, documents: documentsRepo, memory: memoryRepo, embedder: embedder)
+        chatService = ChatService(retrieval: retrieval, llm: chatProvider)
+        metadataExtractor = MetadataExtractor(llm: chatProvider)
     }
 
     // MARK: Bootstrap
@@ -106,8 +150,13 @@ public final class AppModel {
 
     public var modelsReady: Bool {
         guard case let .ready(models) = health else { return false }
-        return Self.modelPresent(settings.embeddingModel, in: models)
-            && Self.modelPresent(settings.chatModel, in: models)
+        // Embeddings always run locally, so Ollama must have the embedding model.
+        let embedReady = Self.modelPresent(settings.embeddingModel, in: models)
+        // Chat is ready when the external API is configured, or Ollama has the model.
+        let chatReady = settings.useExternalAPI
+            ? settings.externalConfigured
+            : Self.modelPresent(settings.chatModel, in: models)
+        return embedReady && chatReady
     }
 
     static func modelPresent(_ name: String, in list: [String]) -> Bool {
@@ -220,7 +269,7 @@ public final class AppModel {
     private func extractFacts(for documentID: UUID, text: String) async {
         guard !text.isEmpty else { return }
         do {
-            let facts = try await metadataExtractor.extract(text: text, model: settings.chatModel)
+            let facts = try await metadataExtractor.extract(text: text, model: effectiveChatModel)
             guard !facts.isEmpty, var doc = try await documentsRepo.document(id: documentID) else { return }
             var merged = doc.metadata
             for (key, value) in facts where merged[key] == nil { merged[key] = value }
@@ -579,7 +628,7 @@ public final class AppModel {
         do {
             let handle = try await chatService.prepareAnswer(
                 project: project,
-                model: settings.chatModel,
+                model: effectiveChatModel,
                 history: history,
                 question: trimmed
             )
@@ -639,7 +688,7 @@ public final class AppModel {
         """
         let user = "Products/documents in the project: \(list.isEmpty ? "(none yet)" : list).\n\nUser message: \"\(question)\""
         let request = ChatRequest(
-            model: settings.chatModel,
+            model: effectiveChatModel,
             messages: [ChatTurn(role: .system, content: system), ChatTurn(role: .user, content: user)],
             temperature: 0
         )
