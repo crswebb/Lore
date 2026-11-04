@@ -25,17 +25,15 @@ public final class LoreDatabase: Sendable {
         try Self.migrator.migrate(dbQueue)
     }
 
-    /// The default on-disk location: ~/Library/Application Support/Lore/lore.sqlite
-    public static func defaultURL(fileManager: FileManager = .default) throws -> URL {
-        let base = try fileManager.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let dir = base.appendingPathComponent("Lore", isDirectory: true)
-        try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("lore.sqlite")
+    /// The default on-disk location: `lore.sqlite` in the data folder, which is
+    /// ~/Library/Application Support/Lore/ unless `LORE_DATA_DIR` overrides it
+    /// (see `LoreDataDirectory`).
+    public static func defaultURL(
+        fileManager: FileManager = .default,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) throws -> URL {
+        try LoreDataDirectory.url(fileManager: fileManager, environment: environment)
+            .appendingPathComponent("lore.sqlite")
     }
 
     // MARK: - Migrations

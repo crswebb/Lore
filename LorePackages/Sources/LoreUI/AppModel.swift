@@ -581,10 +581,7 @@ public final class AppModel {
     }
 
     private static func manualsDirectory() throws -> URL {
-        let base = try FileManager.default.url(
-            for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
-        )
-        let dir = base.appendingPathComponent("Lore/manuals", isDirectory: true)
+        let dir = try LoreDataDirectory.url().appendingPathComponent("manuals", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
